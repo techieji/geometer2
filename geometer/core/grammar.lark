@@ -1,0 +1,29 @@
+// Geometer Lisp Grammar using Lark
+
+start: list_expr | atom
+
+list_expr: "(" (expression)* ")"
+
+expression: list_expr | atom | point_literal
+
+atom: NUMBER | SYMBOL | STRING | "true" | "false" | "null?" | "not"
+
+NUMBER: INT | FLOAT
+FLOAT: SIGN? ("0".."9")+ "." ("0".."9")+
+INT: SIGN? ("0".."9")+
+SIGN: "-" | "+"
+
+SYMBOL: LETTER (LETTER | DIGIT | "!" | "?" | "-" | "_")*
+
+STRING: ESCAPED_STRING
+
+point_literal: "'(" NUMBER "," NUMBER ")"
+
+COMMENT: ";" /.*/
+
+%import common.ESCAPED_STRING
+%import common.LETTER
+%import common.DIGIT
+%import common.WS
+%ignore WS
+%ignore COMMENT
