@@ -7,13 +7,26 @@ expression: list_expr | atom | point_literal
 list_expr: LPAR (expression)* RPAR
 
 atom: NUMBER | SYMBOL | STRING | TRUE | FALSE | NULL_PREDICATE | NOT_OPERATOR
+    | ADD_OP | SUB_OP | MUL_OP | DIV_OP | EQ_OP | GT_OP | LT_OP | GE_OP | LE_OP
 
 NUMBER: INT | FLOAT
 FLOAT: SIGN? ("0".."9")+ "." ("0".."9")+
 INT: SIGN? ("0".."9")+
 SIGN: "-" | "+"
 
-SYMBOL: (LETTER | DIGIT | "!" | "?" | "-" | "_" | "+" | "*" | "/" | "=" | ">" | "<")+
+// Regular symbols (alphanumeric, plus _, !, ?)
+SYMBOL: (LETTER | DIGIT | "!" | "?" | "-" | "_")+
+
+// Explicit terminals for operators
+ADD_OP: "+"
+SUB_OP: "-"
+MUL_OP: "*"
+DIV_OP: "/"
+EQ_OP: "="
+GT_OP: ">"
+LT_OP: "<"
+GE_OP: ">="
+LE_OP: "<="
 
 STRING: ESCAPED_STRING
 

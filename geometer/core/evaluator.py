@@ -130,6 +130,34 @@ class LispTransformer(Transformer):
     def NOT_OPERATOR(self, n):
         return Symbol("not") # Still treat as symbol for lookup in env
 
+    def ADD_OP(self, t):
+        return Symbol(str(t))
+
+    def SUB_OP(self, t):
+        return Symbol(str(t))
+
+    def MUL_OP(self, t):
+        return Symbol(str(t))
+
+    def DIV_OP(self, t):
+        return Symbol(str(t))
+
+    def EQ_OP(self, t):
+        return Symbol(str(t))
+
+    def GT_OP(self, t):
+        return Symbol(str(t))
+
+    def LT_OP(self, t):
+        return Symbol(str(t))
+
+    def GE_OP(self, t):
+        return Symbol(str(t))
+
+    def LE_OP(self, t):
+        return Symbol(str(t))
+
+    @v_args(x, y) # Only pass x and y to this method
     def point_literal(self, x, y):
         # x and y are already transformed by NUMBER method due to v_args(inline=True)
         return Point(x, y)
