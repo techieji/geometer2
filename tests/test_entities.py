@@ -60,7 +60,7 @@ def test_point_addition():
 
     pc1 = Point(1, 2, computed=True)
     p_sum_computed = p1 + pc1
-    assert p_sum_computed == Point(2, 4)
+    assert p_sum_computed == Point(2, 4, computed=True)
     assert p_sum_computed.computed # Definite + Computed = Computed
 
 def test_point_addition_with_dependencies():
@@ -109,7 +109,7 @@ def test_point_subtraction():
 
     pc1 = Point(5, 5, computed=True)
     p_diff_computed = pc1 - p2
-    assert p_diff_computed == Point(3, 4)
+    assert p_diff_computed == Point(3, 4, computed=True)
     assert p_diff_computed.computed
 
 def test_point_subtraction_with_dependencies():
@@ -137,7 +137,7 @@ def test_point_scalar_multiplication():
     pc_s1 = Line(Point(0,0), Point(1,1))
     pc = Point(2, 3, computed=True, dependencies=[pc_s1])
     pc_scaled = pc * 2
-    assert pc_scaled == Point(4, 6)
+    assert pc_scaled == Point(4, 6, computed=True)
     assert pc_scaled.computed
     assert set(pc_scaled.dependencies) == {pc_s1}
 
