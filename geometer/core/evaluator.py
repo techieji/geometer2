@@ -157,7 +157,6 @@ class LispTransformer(Transformer):
     def LE_OP(self, t):
         return Symbol(str(t))
 
-    @v_args(x, y) # Only pass x and y to this method
     def point_literal(self, x, y):
         # x and y are already transformed by NUMBER method due to v_args(inline=True)
         return Point(x, y)
