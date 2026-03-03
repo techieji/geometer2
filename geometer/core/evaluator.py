@@ -130,18 +130,9 @@ class LispTransformer(Transformer):
     def NOT_OPERATOR(self, n):
         return Symbol("not") # Still treat as symbol for lookup in env
 
-    def atom(self, items):
-        # This method ensures that the content of the 'atom' rule is unwrapped.
-        # With v_args(inline=True), if 'atom' contains a single child (like NUMBER or SYMBOL),
-        # the transformer method for 'atom' (if it exists) would receive that child directly.
-        # If no method for 'atom' exists, it typically passes the child up.
-        # However, if there are multiple alternatives (like `NUMBER | SYMBOL | ...`),
-        # Lark might still group them under a 'Tree(atom, [value])' if a specific 'atom'
-        # method isn't present to explicitly unpack.
-        return items[0]
-
     def point_literal(self, x, y):
-        return Point(float(x), float(y))
+        # x and y are already transformed by NUMBER method due to v_args(inline=True)
+        return Point(x, y)
 
     def list_expr(self, *items):
         return list(items)
