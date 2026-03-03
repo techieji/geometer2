@@ -1,12 +1,12 @@
 // Geometer Lisp Grammar using Lark
 
-start: list_expr | atom
-
-list_expr: "(" (expression)* ")"
+start: expression
 
 expression: list_expr | atom | point_literal
 
-atom: NUMBER | SYMBOL | STRING | "true" | "false" | "null?" | "not"
+list_expr: LPAR (expression)* RPAR
+
+atom: NUMBER | SYMBOL | STRING | TRUE | FALSE | NULL_PREDICATE | NOT_OPERATOR
 
 NUMBER: INT | FLOAT
 FLOAT: SIGN? ("0".."9")+ "." ("0".."9")+
@@ -17,7 +17,16 @@ SYMBOL: LETTER (LETTER | DIGIT | "!" | "?" | "-" | "_")*
 
 STRING: ESCAPED_STRING
 
-point_literal: "'(" NUMBER "," NUMBER ")"
+point_literal: SINGLE_QUOTE LPAR NUMBER COMMA NUMBER RPAR
+
+LPAR: "("
+RPAR: ")"
+COMMA: ","
+SINGLE_QUOTE: "'"
+TRUE: "true"
+FALSE: "false"
+NULL_PREDICATE: "null?"
+NOT_OPERATOR: "not"
 
 COMMENT: ";" /.*/
 

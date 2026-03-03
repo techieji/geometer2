@@ -102,8 +102,6 @@ def _standard_env() -> Environment:
         'car': lambda x: x[0] if x else None,
         'cdr': lambda x: x[1:] if x else [],
         'cons': lambda x, y: [x] + (list(y) if isinstance(y, (list, tuple)) else [y]),
-        'true': True,
-        'false': False,
         'null?': lambda x: x == [],
         'not': operator.not_,
     })
@@ -120,6 +118,28 @@ class LispTransformer(Transformer):
     def STRING(self, s):
         return s[1:-1] # Remove quotes
 
+    def TRUE(self, t):
+        return True
+
+    def FALSE(self, f):
+        return False
+
+    def NULL_PREDICATE(self, n):
+        return Symbol("null?") # Still treat as symbol for lookup in env
+
+    def NOT_OPERATOR(self, n):
+        return Symbol("not") # Still treat as symbol for lookup in env
+
+    def atom(self, items):
+        # This method ensures that the content of the 'atom' rule is unwrapped.
+        # With v_args(inline=True), if 'atom' contains a single child (like NUMBER or SYMBOL),
+        # the transformer method for 'atom' (if it exists) would receive that child directly.
+        # If no method for 'atom' exists, it typically passes the child up.
+        # However, if there are multiple alternatives (like `NUMBER | SYMBOL | ...`),
+        # Lark might still group them under a 'Tree(atom, [value])' if a specific 'atom'
+        # method isn't present to explicitly unpack.
+        return items[0]
+
     def point_literal(self, x, y):
         return Point(float(x), float(y))
 
@@ -127,9 +147,6 @@ class LispTransformer(Transformer):
         return list(items)
 
     def expression(self, expr):
-        return expr # Directly return the expression (atom, list_expr, or point_literal)
-
-    def start(self, expr):
         return expr
 
 GRAMMAR_FILE_PATH = os.path.join(os.path.dirname(__file__), "grammar.lark")
