@@ -149,19 +149,6 @@ class Parser:
         results: List[ASTNode] = []
 
         while self.pos < len(self.tokens):
-            # Skip whitespace tokens
-            if self._current_token() and self._current_token().type == TokenType.WHITESPACE:
-                self.pos += 1
-                continue
-
-            # Skip comments
-            if self._current_token() and self._current_token().type == TokenType.COMMENT:
-                self.pos += 1
-                continue
-
-            if self._current_token() is None:
-                break
-
             node = self._parse_expr()
             if node is not None:
                 results.append(node)
@@ -216,16 +203,6 @@ class Parser:
         if token is None:
             return None
 
-        # Skip whitespace
-        if token.type == TokenType.WHITESPACE:
-            self._advance()
-            return self._parse_expr()
-
-        # Skip comments
-        if token.type == TokenType.COMMENT:
-            self._advance()
-            return self._parse_expr()
-
         # Handle opening parenthesis - parse a list
         if token.type == TokenType.LPAREN:
             return self._parse_list()
@@ -261,23 +238,13 @@ class Parser:
         while self._current_token() is not None:
             token = self._current_token()
 
-            # Skip whitespace
-            if token and token.type == TokenType.WHITESPACE:
-                self._advance()
-                continue
-
-            # Skip comments
-            if token and token.type == TokenType.COMMENT:
-                self._advance()
-                continue
-
             # End of list
-            if token and token.type == TokenType.RPAREN:
+            if token.type == TokenType.RPAREN:
                 self._advance()  # consume RPAREN
                 return ListNode(elements, line, column)
 
             # Check for point syntax: (x, y)
-            if token and token.type == TokenType.LPAREN:
+            if token.type == TokenType.LPAREN:
                 # Check if this is a point by looking ahead
                 if self._is_point_syntax():
                     point_node = self._parse_point()
@@ -290,7 +257,7 @@ class Parser:
                 continue
 
             # Parse quoted expression inside list
-            if token and token.type == TokenType.QUOTE:
+            if token.type == TokenType.QUOTE:
                 elements.append(self._parse_quote())
                 continue
 
@@ -317,28 +284,13 @@ class Parser:
             if self._peek_token(1) and self._peek_token(1).type == TokenType.NUMBER:
                 if self._peek_token(2) and self._peek_token(2).type == TokenType.COMMA:
                     if self._peek_token(3) and self._peek_token(3).type == TokenType.NUMBER:
-                        # Check for RPAREN or whitespace before RPAREN
+                        # Check for RPAREN or end of tokens
                         peek4 = self._peek_token(4)
-                        if peek4 and (peek4.type == TokenType.RPAREN or
-                                      peek4.type == TokenType.WHITESPACE):
-                            # Make sure there's a RPAREN after whitespace
-                            return self._find_rparen(5)
-                        elif peek4 and peek4.type == TokenType.RPAREN:
+                        if peek4 and peek4.type == TokenType.RPAREN:
                             return True
-        return False
-
-    def _find_rparen(self, start: int) -> bool:
-        """Find if there's an RPAREN after optional whitespace."""
-        offset = start
-        while offset < len(self.tokens) + start:
-            token = self._peek_token(offset)
-            if token is None:
-                return False
-            if token.type == TokenType.RPAREN:
-                return True
-            if token.type not in (TokenType.WHITESPACE, TokenType.COMMENT):
-                return False
-            offset += 1
+                        elif peek4 is None:
+                            # End of input after the number
+                            return True
         return False
 
     def _parse_point(self) -> PointNode:
@@ -346,11 +298,6 @@ class Parser:
         token = self._advance()  # consume LPAREN
         line = token.line if token else 1
         column = token.column if token else 1
-
-        # Skip any whitespace after (
-        while (self._current_token() and
-               self._current_token().type == TokenType.WHITESPACE):
-            self._advance()
 
         # Parse x coordinate
         x_token = self._current_token()
@@ -361,11 +308,6 @@ class Parser:
         x = x_token.value
         self._advance()
 
-        # Skip whitespace after x
-        while (self._current_token() and
-               self._current_token().type == TokenType.WHITESPACE):
-            self._advance()
-
         # Expect comma
         comma = self._current_token()
         if comma is None or comma.type != TokenType.COMMA:
@@ -373,11 +315,6 @@ class Parser:
                 f"Expected comma in point syntax, got {comma.type if comma else 'end of input'}"
             )
         self._advance()
-
-        # Skip whitespace after comma
-        while (self._current_token() and
-               self._current_token().type == TokenType.WHITESPACE):
-            self._advance()
 
         # Parse y coordinate
         y_token = self._current_token()
@@ -387,11 +324,6 @@ class Parser:
             )
         y = y_token.value
         self._advance()
-
-        # Skip whitespace before )
-        while (self._current_token() and
-               self._current_token().type == TokenType.WHITESPACE):
-            self._advance()
 
         # Expect closing parenthesis
         rparen = self._current_token()
