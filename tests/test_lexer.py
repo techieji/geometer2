@@ -201,7 +201,8 @@ class TestLexerRealisticUsage:
     def test_define_expression(self):
         lexer = Lexer("(define x 5)")
         tokens = list(lexer.tokenize())
-        assert len(tokens) == 4
+        # Should be: LPAREN, SYMBOL("define"), SYMBOL("x"), NUMBER(5), RPAREN
+        assert len(tokens) == 5
         assert tokens[0].type == TokenType.LPAREN
         assert tokens[1].type == TokenType.SYMBOL
         assert tokens[1].value == "define"
@@ -209,6 +210,7 @@ class TestLexerRealisticUsage:
         assert tokens[2].value == "x"
         assert tokens[3].type == TokenType.NUMBER
         assert tokens[3].value == 5
+        assert tokens[4].type == TokenType.RPAREN
     
     def test_lambda_expression(self):
         lexer = Lexer("(lambda (x) (* x 2))")
@@ -230,7 +232,10 @@ class TestLexerRealisticUsage:
     def test_quote_expression(self):
         lexer = Lexer("'(1 2 3)")
         tokens = list(lexer.tokenize())
+        # Should be: QUOTE, LPAREN, NUMBER(1), NUMBER(2), NUMBER(3), RPAREN
         assert tokens[0].type == TokenType.QUOTE
+        assert tokens[1].type == TokenType.LPAREN
+        assert tokens[2].value == 1
     
     def test_conditional_expression(self):
         lexer = Lexer("(if (> x 0) x (- x))")
@@ -248,11 +253,15 @@ class TestLexerRealisticUsage:
     def test_mixed_point_and_expressions(self):
         lexer = Lexer("(line '(0,0) '(1,1))")
         tokens = list(lexer.tokenize())
-        # Should tokenize line, quote, point, quote, point
+        # Should tokenize: LPAREN, SYMBOL("line"), POINT, POINT, RPAREN
+        assert tokens[0].type == TokenType.LPAREN
         assert tokens[1].type == TokenType.SYMBOL
-        assert tokens[2].type == TokenType.QUOTE
+        assert tokens[1].value == "line"
+        assert tokens[2].type == TokenType.POINT
+        assert tokens[2].value == (0, 0)
         assert tokens[3].type == TokenType.POINT
-        assert tokens[3].value == (0, 0)
+        assert tokens[3].value == (1, 1)
+        assert tokens[4].type == TokenType.RPAREN
 
 
 class TestLexerEdgeCases:
@@ -269,18 +278,28 @@ class TestLexerEdgeCases:
     def test_newlines_between_tokens(self):
         lexer = Lexer("(define\nx\n5)")
         tokens = list(lexer.tokenize())
-        assert len(tokens) == 4
+        # Should be: LPAREN, SYMBOL("define"), SYMBOL("x"), NUMBER(5), RPAREN
+        assert len(tokens) == 5
+        assert tokens[0].type == TokenType.LPAREN
+        assert tokens[1].value == "define"
+        assert tokens[2].value == "x"
+        assert tokens[3].value == 5
     
     def test_tabs_between_tokens(self):
         lexer = Lexer("(define\tx\t5)")
         tokens = list(lexer.tokenize())
-        assert len(tokens) == 4
+        # Should be: LPAREN, SYMBOL("define"), SYMBOL("x"), NUMBER(5), RPAREN
+        assert len(tokens) == 5
+        assert tokens[0].type == TokenType.LPAREN
+        assert tokens[1].value == "define"
+        assert tokens[2].value == "x"
+        assert tokens[3].value == 5
     
     def test_comment_handling(self):
         lexer = Lexer("(define x 5) ; this is a comment")
         tokens = list(lexer.tokenize())
-        # Comments should be skipped
-        assert len(tokens) == 4
+        # Comments should be skipped - should be: LPAREN, SYMBOL, SYMBOL, NUMBER, RPAREN
+        assert len(tokens) == 5
         assert tokens[-1].value == 5
     
     def test_unterminated_string(self):
@@ -289,9 +308,10 @@ class TestLexerEdgeCases:
             list(lexer.tokenize())
     
     def test_invalid_point_syntax(self):
-        lexer = Lexer("'(1 2 3)")  # Too many values
-        with pytest.raises(ValueError, match="invalid point"):
-            list(lexer.tokenize())
+        lexer = Lexer("'(1 2 3)")  # Too many values - not point syntax, should be quote + list
+        # This should NOT raise because it's not point syntax, it's a quoted list
+        tokens = list(lexer.tokenize())
+        assert tokens[0].type == TokenType.QUOTE
     
     def test_unbalanced_parentheses(self):
         lexer = Lexer("((())")
