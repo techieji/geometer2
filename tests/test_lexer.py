@@ -19,17 +19,13 @@ class TestLexerBasicTokens:
     
     def test_single_open_paren(self):
         lexer = Lexer("(")
-        tokens = list(lexer.tokenize())
-        assert len(tokens) == 1
-        assert tokens[0].type == TokenType.LPAREN
-        assert tokens[0].value == "("
+        with pytest.raises(ValueError, match="unbalanced parentheses: missing closing paren"):
+            tokens = list(lexer.tokenize())
     
     def test_single_close_paren(self):
         lexer = Lexer(")")
-        tokens = list(lexer.tokenize())
-        assert len(tokens) == 1
-        assert tokens[0].type == TokenType.RPAREN
-        assert tokens[0].value == ")"
+        with pytest.raises(ValueError, match="unbalanced parentheses: extra closing paren"):
+            tokens = list(lexer.tokenize())
     
     def test_balanced_parentheses(self):
         lexer = Lexer("()")
@@ -300,7 +296,7 @@ class TestLexerEdgeCases:
         tokens = list(lexer.tokenize())
         # Comments should be skipped - should be: LPAREN, SYMBOL, SYMBOL, NUMBER, RPAREN
         assert len(tokens) == 5
-        assert tokens[-1].value == 5
+        assert tokens[-1].type == TokenType.RPAREN
     
     def test_unterminated_string(self):
         lexer = Lexer('"unterminated')
