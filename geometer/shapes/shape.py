@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 
 class Shape:
@@ -10,31 +10,33 @@ class Shape:
         line_thickness: float = 1.0,
         endcaps: str = "round"
     ):
-        pass
+        self._color = color
+        self._line_thickness = line_thickness
+        self._endcaps = endcaps
     
     @property
     def color(self) -> str:
-        pass
+        return self._color
     
     @color.setter
     def color(self, value: str) -> None:
-        pass
+        self._color = value
     
     @property
     def line_thickness(self) -> float:
-        pass
+        return self._line_thickness
     
     @line_thickness.setter
     def line_thickness(self, value: float) -> None:
-        pass
+        self._line_thickness = value
     
     @property
     def endcaps(self) -> str:
-        pass
+        return self._endcaps
     
     @endcaps.setter
     def endcaps(self, value: str) -> None:
-        pass
+        self._endcaps = value
     
     def __repr__(self) -> str:
-        pass
+        return f"{self.__class__.__name__}()"

@@ -6,28 +6,34 @@ class Arc(Shape):
     """An arc defined by center, start, and end points."""
     
     def __init__(self, center: Any, start: Any, end: Any, **kwargs):
-        pass
+        super().__init__(**kwargs)
+        self._center = center
+        self._start = start
+        self._end = end
     
     @property
     def center(self) -> Any:
-        pass
+        return self._center
     
     @center.setter
     def center(self, value: Any) -> None:
-        pass
+        self._center = value
     
     @property
     def start(self) -> Any:
-        pass
+        return self._start
     
     @start.setter
     def start(self, value: Any) -> None:
-        pass
+        self._start = value
     
     @property
     def end(self) -> Any:
-        pass
+        return self._end
     
     @end.setter
     def end(self, value: Any) -> None:
-        pass
+        self._end = value
+    
+    def __repr__(self) -> str:
+        return f"Arc({self._center!r}, {self._start!r}, {self._end!r})"
