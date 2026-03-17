@@ -6,16 +6,16 @@ class Figure:
     """Container for all shapes in a drawing."""
     
     def __init__(self):
-        pass
+        self._shapes: List[Shape] = []
     
     def add_shape(self, shape: Shape) -> None:
-        pass
+        self._shapes.append(shape)
     
     def remove_shape(self, shape: Shape) -> None:
-        pass
+        self._shapes.remove(shape)
     
     def get_shapes(self) -> List[Shape]:
-        pass
+        return self._shapes.copy()
     
     def clear(self) -> None:
-        pass
+        self._shapes.clear()
