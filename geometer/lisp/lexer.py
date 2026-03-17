@@ -40,21 +40,6 @@ class Token:
 class Lexer:
     """Tokenizes Scheme source code."""
     
-    # Regex patterns for tokenization
-    PATTERNS = [
-        (r';[^\n]*', None),  # Comments - skip
-        (r'\s+', None),      # Whitespace - skip
-        (r'\(', TokenType.LPAREN),
-        (r'\)', TokenType.RPAREN),
-        (r"'[^()'\"]+", TokenType.QUOTE),  # Quote shorthand
-        (r"'(?=\()", TokenType.QUOTE),  # Quote followed by paren
-        (r"'(?=[0-9+-])", TokenType.QUOTE),  # Quote followed by number
-        (r'-?\d+\.?\d*(?:[eE][+-]?\d+)?', TokenType.NUMBER),
-        (r'"(?:[^"\\]|\\.)*"', TokenType.STRING),
-        (r"'(?P<x>-?\d+\.?\d*)\s*,\s*(?P<y>-?\d+\.?\d*)\)", TokenType.POINT),
-        (r'[a-zA-Z+/<>=_][a-zA-Z0-9+/<>=_-]*', TokenType.SYMBOL),
-    ]
-    
     def __init__(self, source: str):
         self.source = source
         self.pos = 0
@@ -66,83 +51,269 @@ class Lexer:
         tokens = []
         
         while self.pos < len(self.source):
-            matched = False
+            # Skip whitespace
+            self._skip_whitespace()
             
-            # Try each pattern
-            for pattern, token_type in self.PATTERNS:
-                regex = re.compile(pattern)
-                match = regex.match(self.source, self.pos)
-                
-                if match:
-                    text = match.group(0)
-                    
-                    # Skip whitespace and comments
-                    if token_type is None:
-                        self._advance(text)
-                        matched = True
-                        break
-                    
-                    # Process the matched token
-                    value = self._process_value(text, token_type)
-                    token = Token(token_type, value, self.line, self.column)
-                    tokens.append(token)
-                    
-                    self._advance(text)
-                    matched = True
-                    break
+            if self.pos >= len(self.source):
+                break
             
-            if not matched:
+            # Skip comments
+            if self.source[self.pos] == ';':
+                self._skip_comment()
+                continue
+            
+            # Get next token
+            char = self.source[self.pos]
+            
+            # Parentheses
+            if char == '(':
+                tokens.append(self._create_token(TokenType.LPAREN, '('))
+            elif char == ')':
+                tokens.append(self._create_token(TokenType.RPAREN, ')'))
+            
+            # Quote
+            elif char == "'":
+                tokens.append(self._read_quote())
+            
+            # String
+            elif char == '"':
+                tokens.append(self._read_string())
+            
+            # Number or point
+            elif char.isdigit() or (char == '-' and self._has_number_after_minus()):
+                tokens.append(self._read_number_or_point())
+            
+            # Symbol
+            elif char.isalpha() or char in '+-*/<>=_':
+                tokens.append(self._read_symbol())
+            
+            else:
                 raise ValueError(
-                    f"Unexpected character '{self.source[self.pos]}' "
+                    f"Unexpected character '{char}' "
                     f"at line {self.line}, column {self.column}"
                 )
         
-        # Add EOF token
-        tokens.append(Token(TokenType.EOF, None, self.line, self.column))
         return tokens
     
-    def _advance(self, text: str) -> None:
-        """Advance position after matching text."""
-        for char in text:
-            if char == '\n':
-                self.line += 1
-                self.column = 1
-            else:
-                self.column += 1
-        self.pos += len(text)
+    def _has_number_after_minus(self) -> bool:
+        """Check if there's a digit after a minus sign."""
+        if self.pos + 1 < len(self.source):
+            return self.source[self.pos + 1].isdigit()
+        return False
     
-    def _process_value(
-        self, 
-        text: str, 
-        token_type: TokenType
-    ) -> Union[str, int, float, Tuple[float, float]]:
-        """Process the matched text into a token value."""
-        if token_type == TokenType.NUMBER:
-            # Try integer first, then float
-            try:
-                return int(text)
-            except ValueError:
-                return float(text)
+    def _skip_whitespace(self) -> None:
+        """Skip whitespace characters."""
+        while self.pos < len(self.source):
+            char = self.source[self.pos]
+            if char in ' \t\n\r':
+                if char == '\n':
+                    self.line += 1
+                    self.column = 1
+                else:
+                    self.column += 1
+                self.pos += 1
+            else:
+                break
+    
+    def _skip_comment(self) -> None:
+        """Skip comment until end of line."""
+        while self.pos < len(self.source) and self.source[self.pos] != '\n':
+            self.pos += 1
+    
+    def _create_token(
+        self,
+        token_type: TokenType,
+        value: Union[str, int, float, Tuple[float, float]]
+    ) -> Token:
+        """Create a token at the current position."""
+        token = Token(token_type, value, self.line, self.column)
         
-        elif token_type == TokenType.STRING:
-            # Remove quotes and handle escapes
-            return text[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+        # Advance position
+        value_str = str(value)
+        self.column += len(value_str)
+        self.pos += len(value_str)
         
-        elif token_type == TokenType.POINT:
-            # Parse point syntax: '(<x>,<y>)
-            match = re.match(r"'(?P<x>-?\d+\.?\d*)\s*,\s*(?P<y>-?\d+\.?\d*)\)", text)
-            if match:
-                x = float(match.group('x'))
-                y = float(match.group('y'))
-                # Convert to int if whole numbers
-                if x.is_integer() and y.is_integer():
-                    return (int(x), y)
-                return (x, y)
-            raise ValueError(f"Invalid point syntax: {text}")
+        return token
+    
+    def _read_quote(self) -> Token:
+        """Read a quote token, checking for point syntax."""
+        start_line = self.line
+        start_column = self.column
+        self.pos += 1  # Skip '
         
-        elif token_type == TokenType.QUOTE:
-            # Return the quote marker, actual quote handling done by parser
-            return text
+        # Check if followed by opening paren for point
+        if self.pos < len(self.source) and self.source[self.pos] == '(':
+            return self._read_point(start_line, start_column)
         
+        # Just a quote, return it
+        return Token(TokenType.QUOTE, "'", start_line, start_column)
+    
+    def _read_point(self, start_line: int, start_column: int) -> Token:
+        """Read a point literal: '(<x>,<y>)"""
+        self.pos += 1  # Skip (
+        
+        # Skip whitespace
+        while self.pos < len(self.source) and self.source[self.pos] in ' \t':
+            self.pos += 1
+        
+        # Read x coordinate
+        x = self._read_number()
+        
+        # Skip whitespace around comma
+        while self.pos < len(self.source) and self.source[self.pos] in ' \t':
+            self.pos += 1
+        
+        # Expect comma
+        if self.pos >= len(self.source) or self.source[self.pos] != ',':
+            raise ValueError(f"Invalid point syntax: expected comma at line {self.line}")
+        self.pos += 1  # Skip ,
+        
+        # Skip whitespace after comma
+        while self.pos < len(self.source) and self.source[self.pos] in ' \t':
+            self.pos += 1
+        
+        # Read y coordinate
+        y = self._read_number()
+        
+        # Skip whitespace before closing paren
+        while self.pos < len(self.source) and self.source[self.pos] in ' \t':
+            self.pos += 1
+        
+        # Expect closing paren
+        if self.pos >= len(self.source) or self.source[self.pos] != ')':
+            raise ValueError(f"Invalid point syntax: expected closing paren at line {self.line}")
+        self.pos += 1  # Skip )
+        
+        # Convert to tuple (int if whole numbers)
+        if isinstance(x, int) and isinstance(y, int):
+            value = (x, y)
         else:
-            return text
+            value = (x, y)
+        
+        return Token(TokenType.POINT, value, start_line, start_column)
+    
+    def _read_number_or_point(self) -> Token:
+        """Read a number or detect if it's a point."""
+        start_line = self.line
+        start_column = self.column
+        
+        # Check for quote prefix (for point syntax)
+        if self.source[self.pos] == "'":
+            return self._read_quote()
+        
+        # Read the number
+        return self._read_number()
+    
+    def _read_number(self) -> Token:
+        """Read a number from the current position."""
+        start_line = self.line
+        start_column = self.column
+        
+        # Handle negative sign
+        negative = False
+        if self.source[self.pos] == '-':
+            negative = True
+            self.pos += 1
+        
+        # Read digits before decimal
+        int_part = ''
+        while self.pos < len(self.source) and self.source[self.pos].isdigit():
+            int_part += self.source[self.pos]
+            self.pos += 1
+        
+        # Read decimal part
+        has_decimal = False
+        if self.pos < len(self.source) and self.source[self.pos] == '.':
+            has_decimal = True
+            self.pos += 1
+        
+        dec_part = ''
+        while self.pos < len(self.source) and self.source[self.pos].isdigit():
+            dec_part += self.source[self.pos]
+            self.pos += 1
+        
+        # Read exponent
+        has_exponent = False
+        if self.pos < len(self.source) and self.source[self.pos] in 'eE':
+            has_exponent = True
+            self.pos += 1
+        
+        exp_sign = ''
+        if self.pos < len(self.source) and self.source[self.pos] in '+-':
+            exp_sign = self.source[self.pos]
+            self.pos += 1
+        
+        exp_part = ''
+        while self.pos < len(self.source) and self.source[self.pos].isdigit():
+            exp_part += self.source[self.pos]
+            self.pos += 1
+        
+        # Build the number
+        num_str = int_part
+        if has_decimal:
+            num_str += '.' + dec_part
+        if has_exponent:
+            num_str += 'e' + exp_sign + exp_part
+        
+        # Convert to int or float
+        try:
+            if has_decimal or has_exponent:
+                value = float(num_str)
+            else:
+                value = int(num_str)
+            if negative and int_part:
+                value = -value
+        except ValueError:
+            raise ValueError(f"Invalid number: {num_str}")
+        
+        return Token(TokenType.NUMBER, value, start_line, start_column)
+    
+    def _read_string(self) -> Token:
+        """Read a string literal."""
+        start_line = self.line
+        start_column = self.column
+        self.pos += 1  # Skip opening quote
+        
+        result = []
+        while self.pos < len(self.source):
+            char = self.source[self.pos]
+            
+            if char == '"':
+                self.pos += 1  # Skip closing quote
+                return Token(TokenType.STRING, ''.join(result), start_line, start_column)
+            
+            if char == '\\' and self.pos + 1 < len(self.source):
+                self.pos += 1
+                escaped = self.source[self.pos]
+                if escaped == 'n':
+                    result.append('\n')
+                elif escaped == 't':
+                    result.append('\t')
+                elif escaped == '"':
+                    result.append('"')
+                elif escaped == '\\':
+                    result.append('\\')
+                else:
+                    result.append(escaped)
+            else:
+                result.append(char)
+            
+            self.pos += 1
+        
+        raise ValueError(f"Unterminated string starting at line {start_line}")
+    
+    def _read_symbol(self) -> Token:
+        """Read a symbol."""
+        start_line = self.line
+        start_column = self.column
+        
+        result = []
+        while self.pos < len(self.source):
+            char = self.source[self.pos]
+            if char.isalnum() or char in '+-*/<>=_':
+                result.append(char)
+                self.pos += 1
+            else:
+                break
+        
+        return Token(TokenType.SYMBOL, ''.join(result), start_line, start_column)
