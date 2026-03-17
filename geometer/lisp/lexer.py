@@ -14,6 +14,8 @@ class TokenType(Enum):
     SYMBOL = auto()
     QUOTE = auto()
     POINT = auto()
+    COMMA = auto()
+    BOOLEAN = auto()
     COMMENT = auto()
     EOF = auto()
 
@@ -67,13 +69,25 @@ class Lexer:
             
             # Parentheses
             if char == '(':
-                tokens.append(self._create_token(TokenType.LPAREN, '('))
+                # Check if this is point syntax: (number, number)
+                if self._is_point_syntax():
+                    tokens.append(self._read_point())
+                else:
+                    tokens.append(self._create_token(TokenType.LPAREN, '('))
             elif char == ')':
                 tokens.append(self._create_token(TokenType.RPAREN, ')'))
+            
+            # Comma (for point syntax)
+            elif char == ',':
+                tokens.append(self._create_token(TokenType.COMMA, ','))
             
             # Quote
             elif char == "'":
                 tokens.append(self._read_quote())
+            
+            # Boolean (#t, #f)
+            elif char == '#':
+                tokens.append(self._read_boolean())
             
             # String
             elif char == '"':
@@ -93,27 +107,45 @@ class Lexer:
                     f"at line {self.line}, column {self.column}"
                 )
         
-        # Check for unbalanced parentheses
-        self._check_balanced_parentheses(tokens)
+        # Add EOF token
+        tokens.append(Token(TokenType.EOF, None, self.line, self.column))
         
         return tokens
     
-    def _check_balanced_parentheses(self, tokens: List[Token]) -> None:
-        """Check that parentheses are balanced."""
-        depth = 0
-        for token in tokens:
-            if token.type == TokenType.LPAREN:
-                depth += 1
-            elif token.type == TokenType.RPAREN:
-                depth -= 1
-                if depth < 0:
-                    raise ValueError(
-                        f"unbalanced parentheses: extra closing paren "
-                        f"at line {token.line}, column {token.column}"
-                    )
+    def _is_point_syntax(self) -> bool:
+        """Check if the current position looks like point syntax (number, number)."""
+        save_pos = self.pos + 1  # Skip the '('
         
-        if depth > 0:
-            raise ValueError("unbalanced parentheses: missing closing paren")
+        # Skip whitespace
+        while save_pos < len(self.source) and self.source[save_pos] in ' \t':
+            save_pos += 1
+        
+        # Check for a number (or negative number)
+        if save_pos < len(self.source):
+            if self.source[save_pos] == '-':
+                save_pos += 1
+            
+            # Must have at least one digit
+            if save_pos < len(self.source) and self.source[save_pos].isdigit():
+                # Skip digits
+                while save_pos < len(self.source) and self.source[save_pos].isdigit():
+                    save_pos += 1
+                
+                # Skip decimal part if present
+                if save_pos < len(self.source) and self.source[save_pos] == '.':
+                    save_pos += 1
+                    while save_pos < len(self.source) and self.source[save_pos].isdigit():
+                        save_pos += 1
+                
+                # Skip whitespace
+                while save_pos < len(self.source) and self.source[save_pos] in ' \t':
+                    save_pos += 1
+                
+                # Must have comma
+                if save_pos < len(self.source) and self.source[save_pos] == ',':
+                    return True
+        
+        return False
     
     def _has_number_after_minus(self) -> bool:
         """Check if there's a digit after a minus sign."""
@@ -155,6 +187,30 @@ class Lexer:
         
         return token
     
+    def _read_boolean(self) -> Token:
+        """Read a boolean: #t or #f"""
+        start_line = self.line
+        start_column = self.column
+        self.pos += 1  # Skip #
+        
+        if self.pos >= len(self.source):
+            raise ValueError(f"incomplete boolean at line {start_line}")
+        
+        char = self.source[self.pos]
+        if char == 't':
+            self.pos += 1
+            self.column += 2
+            return Token(TokenType.BOOLEAN, True, start_line, start_column)
+        elif char == 'f':
+            self.pos += 1
+            self.column += 2
+            return Token(TokenType.BOOLEAN, False, start_line, start_column)
+        else:
+            raise ValueError(
+                f"invalid boolean '#{char}' "
+                f"at line {start_line}, column {start_column}"
+            )
+    
     def _read_quote(self) -> Token:
         """Read a quote token, checking for point syntax."""
         start_line = self.line
@@ -171,43 +227,13 @@ class Lexer:
         # Just a quote, return it
         return Token(TokenType.QUOTE, "'", start_line, start_column)
     
-    def _is_point_syntax(self) -> bool:
-        """Check if the current position looks like point syntax '(<number>,<number>)."""
-        save_pos = self.pos + 1  # Skip the '('
-        
-        # Skip whitespace
-        while save_pos < len(self.source) and self.source[save_pos] in ' \t':
-            save_pos += 1
-        
-        # Check for a number (or negative number)
-        if save_pos < len(self.source):
-            if self.source[save_pos] == '-':
-                save_pos += 1
+    def _read_point(self, start_line: Optional[int] = None, start_column: Optional[int] = None) -> Token:
+        """Read a point literal: (x, y) or '(<x>,<y>)"""
+        if start_line is None:
+            start_line = self.line
+        if start_column is None:
+            start_column = self.column
             
-            # Must have at least one digit
-            if save_pos < len(self.source) and self.source[save_pos].isdigit():
-                # Skip digits
-                while save_pos < len(self.source) and self.source[save_pos].isdigit():
-                    save_pos += 1
-                
-                # Skip decimal part if present
-                if save_pos < len(self.source) and self.source[save_pos] == '.':
-                    save_pos += 1
-                    while save_pos < len(self.source) and self.source[save_pos].isdigit():
-                        save_pos += 1
-                
-                # Skip whitespace
-                while save_pos < len(self.source) and self.source[save_pos] in ' \t':
-                    save_pos += 1
-                
-                # Must have comma
-                if save_pos < len(self.source) and self.source[save_pos] == ',':
-                    return True
-        
-        return False
-    
-    def _read_point(self, start_line: int, start_column: int) -> Token:
-        """Read a point literal: '(<x>,<y>)"""
         self.pos += 1  # Skip (
         
         # Skip whitespace

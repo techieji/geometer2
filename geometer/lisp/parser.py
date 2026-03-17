@@ -149,6 +149,10 @@ class Parser:
         results: List[ASTNode] = []
 
         while self.pos < len(self.tokens):
+            # Stop at EOF
+            if self._current_token() and self._current_token().type == TokenType.EOF:
+                break
+                
             node = self._parse_expr()
             if node is not None:
                 results.append(node)
@@ -203,9 +207,17 @@ class Parser:
         if token is None:
             return None
 
+        # Handle EOF
+        if token.type == TokenType.EOF:
+            return None
+
         # Handle opening parenthesis - parse a list
         if token.type == TokenType.LPAREN:
             return self._parse_list()
+
+        # Handle point literal
+        if token.type == TokenType.POINT:
+            return self._parse_point()
 
         # Handle quote
         if token.type == TokenType.QUOTE:
@@ -243,22 +255,9 @@ class Parser:
                 self._advance()  # consume RPAREN
                 return ListNode(elements, line, column)
 
-            # Check for point syntax: (x, y)
-            if token.type == TokenType.LPAREN:
-                # Check if this is a point by looking ahead
-                if self._is_point_syntax():
-                    point_node = self._parse_point()
-                    if point_node:
-                        elements.append(point_node)
-                        continue
-
-                # Not a point, parse as regular list
-                elements.append(self._parse_expr())
-                continue
-
-            # Parse quoted expression inside list
-            if token.type == TokenType.QUOTE:
-                elements.append(self._parse_quote())
+            # Handle point literal token
+            if token.type == TokenType.POINT:
+                elements.append(self._parse_point())
                 continue
 
             # Parse the expression
@@ -272,67 +271,13 @@ class Parser:
             f"at line {line}, column {column}"
         )
 
-    def _is_point_syntax(self) -> bool:
-        """Check if the current position starts a point syntax.
-
-        Point syntax is: (number, number)
-        """
-        # Current token should be LPAREN, we've already checked that
-        # Look ahead: LPAREN -> NUMBER -> COMMA -> NUMBER -> RPAREN
-        if self._current_token() and self._current_token().type == TokenType.LPAREN:
-            # Need at least 5 tokens ahead: ( num , num )
-            if self._peek_token(1) and self._peek_token(1).type == TokenType.NUMBER:
-                if self._peek_token(2) and self._peek_token(2).type == TokenType.COMMA:
-                    if self._peek_token(3) and self._peek_token(3).type == TokenType.NUMBER:
-                        # Check for RPAREN or end of tokens
-                        peek4 = self._peek_token(4)
-                        if peek4 and peek4.type == TokenType.RPAREN:
-                            return True
-                        elif peek4 is None:
-                            # End of input after the number
-                            return True
-        return False
-
     def _parse_point(self) -> PointNode:
-        """Parse a point literal: (x, y)"""
-        token = self._advance()  # consume LPAREN
+        """Parse a point literal token."""
+        token = self._advance()  # consume POINT
         line = token.line if token else 1
         column = token.column if token else 1
-
-        # Parse x coordinate
-        x_token = self._current_token()
-        if x_token is None or x_token.type != TokenType.NUMBER:
-            raise SyntaxError(
-                f"Expected number for x coordinate, got {x_token.type if x_token else 'end of input'}"
-            )
-        x = x_token.value
-        self._advance()
-
-        # Expect comma
-        comma = self._current_token()
-        if comma is None or comma.type != TokenType.COMMA:
-            raise SyntaxError(
-                f"Expected comma in point syntax, got {comma.type if comma else 'end of input'}"
-            )
-        self._advance()
-
-        # Parse y coordinate
-        y_token = self._current_token()
-        if y_token is None or y_token.type != TokenType.NUMBER:
-            raise SyntaxError(
-                f"Expected number for y coordinate, got {y_token.type if y_token else 'end of input'}"
-            )
-        y = y_token.value
-        self._advance()
-
-        # Expect closing parenthesis
-        rparen = self._current_token()
-        if rparen is None or rparen.type != TokenType.RPAREN:
-            raise SyntaxError(
-                f"Expected ')' in point syntax, got {rparen.type if rparen else 'end of input'}"
-            )
-        self._advance()
-
+        
+        x, y = token.value
         return PointNode(x, y, line, column)
 
     def _parse_quote(self) -> ListNode:
