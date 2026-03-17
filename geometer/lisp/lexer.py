@@ -79,9 +79,9 @@ class Lexer:
             elif char == '"':
                 tokens.append(self._read_string())
             
-            # Number or point
+            # Number
             elif char.isdigit() or (char == '-' and self._has_number_after_minus()):
-                tokens.append(self._read_number_or_point())
+                tokens.append(self._read_number())
             
             # Symbol
             elif char.isalpha() or char in '+-*/<>=_':
@@ -156,8 +156,9 @@ class Lexer:
         while self.pos < len(self.source) and self.source[self.pos] in ' \t':
             self.pos += 1
         
-        # Read x coordinate
-        x = self._read_number()
+        # Read x coordinate (get the value, not the token)
+        x_token = self._read_number()
+        x = x_token.value
         
         # Skip whitespace around comma
         while self.pos < len(self.source) and self.source[self.pos] in ' \t':
@@ -165,15 +166,16 @@ class Lexer:
         
         # Expect comma
         if self.pos >= len(self.source) or self.source[self.pos] != ',':
-            raise ValueError(f"Invalid point syntax: expected comma at line {self.line}")
+            raise ValueError(f"invalid point: expected comma at line {self.line}")
         self.pos += 1  # Skip ,
         
         # Skip whitespace after comma
         while self.pos < len(self.source) and self.source[self.pos] in ' \t':
             self.pos += 1
         
-        # Read y coordinate
-        y = self._read_number()
+        # Read y coordinate (get the value, not the token)
+        y_token = self._read_number()
+        y = y_token.value
         
         # Skip whitespace before closing paren
         while self.pos < len(self.source) and self.source[self.pos] in ' \t':
@@ -181,28 +183,13 @@ class Lexer:
         
         # Expect closing paren
         if self.pos >= len(self.source) or self.source[self.pos] != ')':
-            raise ValueError(f"Invalid point syntax: expected closing paren at line {self.line}")
+            raise ValueError(f"invalid point: expected closing paren at line {self.line}")
         self.pos += 1  # Skip )
         
-        # Convert to tuple (int if whole numbers)
-        if isinstance(x, int) and isinstance(y, int):
-            value = (x, y)
-        else:
-            value = (x, y)
+        # Convert to tuple
+        value = (x, y)
         
         return Token(TokenType.POINT, value, start_line, start_column)
-    
-    def _read_number_or_point(self) -> Token:
-        """Read a number or detect if it's a point."""
-        start_line = self.line
-        start_column = self.column
-        
-        # Check for quote prefix (for point syntax)
-        if self.source[self.pos] == "'":
-            return self._read_quote()
-        
-        # Read the number
-        return self._read_number()
     
     def _read_number(self) -> Token:
         """Read a number from the current position."""
@@ -300,7 +287,7 @@ class Lexer:
             
             self.pos += 1
         
-        raise ValueError(f"Unterminated string starting at line {start_line}")
+        raise ValueError(f"unterminated string starting at line {start_line}")
     
     def _read_symbol(self) -> Token:
         """Read a symbol."""
