@@ -80,7 +80,7 @@ class Lexer:
                 tokens.append(self._create_token(TokenType.RPAREN, ')'))
                 self.paren_depth -= 1
                 if self.paren_depth < 0:
-                    raise ValueError("unbalanced parentheses: extra closing paren")
+                    raise SyntaxError("unbalanced parentheses: extra closing paren")
             
             # Comma (for point syntax)
             elif char == ',':
@@ -114,7 +114,7 @@ class Lexer:
         
         # Check for unbalanced opening parentheses
         if self.paren_depth > 0:
-            raise ValueError("unbalanced parentheses: missing closing paren")
+            raise SyntaxError("unbalanced parentheses: missing closing paren")
         
         # Add EOF token
         tokens.append(Token(TokenType.EOF, None, self.line, self.column))

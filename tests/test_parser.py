@@ -191,6 +191,7 @@ class TestParserQuotedExpressions:
         """Parse quoted point."""
         parser = Parser("'(10, 20)")
         ast = parser.parse()
+        print(ast)
         assert len(ast) == 1
         # Quote creates (quote expr), so should be a ListNode with quote and point
         assert isinstance(ast[0], ListNode)
@@ -319,25 +320,25 @@ class TestParserEdgeCases:
     def test_unbalanced_parentheses(self):
         """Parse unbalanced parentheses should raise error."""
         parser = Parser("(a b c")
-        with pytest.raises(ValueError):
+        with pytest.raises(SyntaxError):
             parser.parse()
 
     def test_unbalanced_parentheses_extra_close(self):
         """Parse extra closing parenthesis should raise error."""
         parser = Parser("(a b c))")
-        with pytest.raises(ValueError):
+        with pytest.raises(SyntaxError):
             parser.parse()
 
     def test_invalid_point_syntax_missing_y(self):
         """Parse invalid point syntax (missing y)."""
         parser = Parser("(10,)")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):    # TODO this should be a ValueError
             parser.parse()
 
     def test_invalid_point_syntax_missing_both(self):
         """Parse invalid point syntax (missing both)."""
         parser = Parser("(,)")
-        with pytest.raises(ValueError):
+        with pytest.raises(SyntaxError):
             parser.parse()
 
     def test_point_without_parens(self):

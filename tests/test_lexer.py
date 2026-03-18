@@ -21,12 +21,12 @@ class TestLexerBasicTokens:
     
     def test_single_open_paren(self):
         lexer = Lexer("(")
-        with pytest.raises(ValueError, match="unbalanced parentheses: missing closing paren"):
+        with pytest.raises(SyntaxError, match="unbalanced parentheses: missing closing paren"):
             tokens = list(lexer.tokenize())
     
     def test_single_close_paren(self):
         lexer = Lexer(")")
-        with pytest.raises(ValueError, match="unbalanced parentheses: extra closing paren"):
+        with pytest.raises(SyntaxError, match="unbalanced parentheses: extra closing paren"):
             tokens = list(lexer.tokenize())
     
     def test_balanced_parentheses(self):
@@ -345,7 +345,7 @@ class TestLexerEdgeCases:
     
     def test_unbalanced_parentheses(self):
         lexer = Lexer("((())")
-        with pytest.raises(ValueError, match="unbalanced"):
+        with pytest.raises(SyntaxError, match="unbalanced"):
             list(lexer.tokenize())
 
 
