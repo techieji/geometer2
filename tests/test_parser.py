@@ -188,7 +188,7 @@ class TestParserQuotedExpressions:
 
     def test_quote_point(self):
         """Parse quoted point."""
-        parser = Parser("'(10, 20)")
+        parser = Parser("'(10 20)")
         ast = parser.parse()
         assert len(ast) == 1
         assert isinstance(ast[0], ListNode)
