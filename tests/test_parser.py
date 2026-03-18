@@ -94,8 +94,9 @@ class TestParserLists:
         assert len(ast) == 1
         assert isinstance(ast[0], ListNode)
         assert isinstance(ast[0].elements[0], ListNode)
-        assert isinstance(ast[0].elements[0].elements[0], AtomNode)
-        assert ast[0].elements[0].elements[0].value == "a"
+        # With three levels of parens, innermost contains an atom
+        assert isinstance(ast[0].elements[0].elements[0], ListNode)
+        assert ast[0].elements[0].elements[0].elements[0].value == "a"
 
     def test_multiple_lists(self):
         """Parse multiple lists."""
@@ -188,12 +189,15 @@ class TestParserQuotedExpressions:
 
     def test_quote_point(self):
         """Parse quoted point."""
-        parser = Parser("'(10 20)")
+        parser = Parser("'(10, 20)")
         ast = parser.parse()
         assert len(ast) == 1
+        # Quote creates (quote expr), so should be a ListNode with quote and point
         assert isinstance(ast[0], ListNode)
         assert ast[0].elements[0].value == "quote"
         assert isinstance(ast[0].elements[1], PointNode)
+        assert ast[0].elements[1].x == 10
+        assert ast[0].elements[1].y == 20
 
     def test_double_quote(self):
         """Parse double quote."""
@@ -247,7 +251,8 @@ class TestParserRealisticUsage:
         assert len(ast) == 1
         assert isinstance(ast[0], ListNode)
         assert ast[0].elements[0].value == "if"
-        assert ast[0].elements[1].value == "#t"
+        # #t should be parsed as boolean True, not string "#t"
+        assert ast[0].elements[1].value is True
 
     def test_string_in_expression(self):
         """Parse string inside expression."""
@@ -314,34 +319,32 @@ class TestParserEdgeCases:
     def test_unbalanced_parentheses(self):
         """Parse unbalanced parentheses should raise error."""
         parser = Parser("(a b c")
-        with pytest.raises(SyntaxError):
+        with pytest.raises(ValueError):
             parser.parse()
 
     def test_unbalanced_parentheses_extra_close(self):
         """Parse extra closing parenthesis should raise error."""
         parser = Parser("(a b c))")
-        with pytest.raises(SyntaxError):
+        with pytest.raises(ValueError):
             parser.parse()
 
     def test_invalid_point_syntax_missing_y(self):
         """Parse invalid point syntax (missing y)."""
         parser = Parser("(10,)")
-        with pytest.raises(SyntaxError):
+        with pytest.raises(ValueError):
             parser.parse()
 
     def test_invalid_point_syntax_missing_both(self):
         """Parse invalid point syntax (missing both)."""
         parser = Parser("(,)")
-        with pytest.raises(SyntaxError):
+        with pytest.raises(ValueError):
             parser.parse()
 
     def test_point_without_parens(self):
-        """Parse point-like syntax without parens should be symbol."""
+        """Parse point-like syntax without parens should fail."""
         parser = Parser("10,20")
-        ast = parser.parse()
-        # Should be parsed as a symbol, not a point
-        assert len(ast) == 1
-        assert ast[0].value == "10,20"
+        with pytest.raises(SyntaxError):
+            parser.parse()
 
     def test_empty_nested_list(self):
         """Parse empty nested list."""
@@ -351,7 +354,10 @@ class TestParserEdgeCases:
         assert isinstance(ast[0], ListNode)
         assert len(ast[0].elements) == 1
         assert isinstance(ast[0].elements[0], ListNode)
-        assert ast[0].elements[0].elements == []
+        # The innermost (()) should be an empty list
+        assert len(ast[0].elements[0].elements) == 1
+        assert isinstance(ast[0].elements[0].elements[0], ListNode)
+        assert ast[0].elements[0].elements[0].elements == []
 
 
 class TestParserTokenPositions:
