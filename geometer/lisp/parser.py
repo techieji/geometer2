@@ -211,6 +211,10 @@ class Parser:
         if token.type == TokenType.EOF:
             return None
 
+        # Handle quote - must check before LPAREN since 'expr starts with QUOTE
+        if token.type == TokenType.QUOTE:
+            return self._parse_quote()
+
         # Handle opening parenthesis - parse a list
         if token.type == TokenType.LPAREN:
             return self._parse_list()
@@ -218,10 +222,6 @@ class Parser:
         # Handle point literal
         if token.type == TokenType.POINT:
             return self._parse_point()
-
-        # Handle quote
-        if token.type == TokenType.QUOTE:
-            return self._parse_quote()
 
         # Handle atoms: symbols, numbers, strings
         if token.type in (TokenType.SYMBOL, TokenType.NUMBER, TokenType.STRING):
