@@ -47,6 +47,7 @@ class Lexer:
         self.pos = 0
         self.line = 1
         self.column = 1
+        self.paren_depth = 0  # Track parentheses balance
     
     def tokenize(self) -> List[Token]:
         """Generate tokens from the source code."""
@@ -74,8 +75,12 @@ class Lexer:
                     tokens.append(self._read_point())
                 else:
                     tokens.append(self._create_token(TokenType.LPAREN, '('))
+                    self.paren_depth += 1
             elif char == ')':
                 tokens.append(self._create_token(TokenType.RPAREN, ')'))
+                self.paren_depth -= 1
+                if self.paren_depth < 0:
+                    raise ValueError("unbalanced parentheses: extra closing paren")
             
             # Comma (for point syntax)
             elif char == ',':
@@ -106,6 +111,10 @@ class Lexer:
                     f"Unexpected character '{char}' "
                     f"at line {self.line}, column {self.column}"
                 )
+        
+        # Check for unbalanced opening parentheses
+        if self.paren_depth > 0:
+            raise ValueError("unbalanced parentheses: missing closing paren")
         
         # Add EOF token
         tokens.append(Token(TokenType.EOF, None, self.line, self.column))
