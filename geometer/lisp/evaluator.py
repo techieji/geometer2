@@ -144,10 +144,14 @@ def _init_builtins() -> None:
     add_builtin('point-', lambda p1, p2: DefinitePoint(p1.x - p2.x, p1.y - p2.y))
     add_builtin('point*', lambda s, p: DefinitePoint(s * p.x, s * p.y))
 
-    # Add builtins to the global environment
+    # Add builtins to the current global environment
     env = get_global_environment()
     for name, func in _builtins.items():
-        env.define(name, func)
+        try:
+            env.define(name, func)
+        except ValueError:
+            # Already defined, skip (e.g., if called multiple times)
+            pass
 
 
 def _convert_point_node(node: PointNode) -> DefinitePoint:
@@ -482,6 +486,8 @@ def eval_ast(nodes: List[ASTNode], env: Optional[Environment] = None) -> List[An
     """
     if env is None:
         env = get_global_environment()
+        # Ensure builtins are available in case environment was reset
+        _init_builtins()
     
     results = []
     for node in nodes:
