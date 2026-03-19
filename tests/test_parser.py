@@ -191,14 +191,11 @@ class TestParserQuotedExpressions:
         """Parse quoted point."""
         parser = Parser("'(10, 20)")
         ast = parser.parse()
-        print(ast)
         assert len(ast) == 1
-        # Quote creates (quote expr), so should be a ListNode with quote and point
-        assert isinstance(ast[0], ListNode)
-        assert ast[0].elements[0].value == "quote"
-        assert isinstance(ast[0].elements[1], PointNode)
-        assert ast[0].elements[1].x == 10
-        assert ast[0].elements[1].y == 20
+        # Results in a point alone
+        assert isinstance(ast[0], PointNode)
+        assert ast[0].x == 10
+        assert ast[0].y == 20
 
     def test_double_quote(self):
         """Parse double quote."""
