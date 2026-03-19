@@ -169,6 +169,18 @@ def _convert_point_node(node: PointNode) -> DefinitePoint:
     return DefinitePoint(node.x, node.y)
 
 
+def _convert_list_node(node: ListNode) -> List[Any]:
+    """Convert a ListNode to a Python list.
+    
+    Args:
+        node: The ListNode to convert.
+        
+    Returns:
+        A Python list with evaluated elements.
+    """
+    return [elem.value for elem in node.elements]
+
+
 def _eval_atom(node: AtomNode, env: Environment) -> Any:
     """Evaluate an atom node.
     
@@ -248,7 +260,14 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         # (quote <expr>) - return expr unevaluated
         if len(args) != 1:
             raise SyntaxError("quote requires exactly one argument")
-        return args[0]
+        
+        # Convert ListNode to Python list for proper handling
+        quoted = args[0]
+        if isinstance(quoted, ListNode):
+            return _convert_list_node(quoted)
+        elif isinstance(quoted, AtomNode):
+            return quoted.value
+        return quoted
     
     elif name == 'if':
         # (if <test> <consequent> <alternate>)
