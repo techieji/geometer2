@@ -178,6 +178,10 @@ def _eval_atom(node: AtomNode, env: Environment) -> Any:
     """
     value = node.value
     
+    # String literals should return themselves, not be looked up as symbols
+    if node.subtype == "string":
+        return value
+    
     # Symbols need to be looked up in the environment
     if isinstance(value, str):
         return env.lookup(value)
