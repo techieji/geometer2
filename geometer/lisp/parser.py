@@ -26,10 +26,12 @@ class AtomNode(ASTNode):
         self,
         value: Union[str, int, float, bool],
         line: int = 1,
-        column: int = 1
+        column: int = 1,
+        subtype: Optional[str] = None
     ):
         super().__init__(line, column)
         self._value = value
+        self._subtype = subtype
 
     @property
     def type(self) -> str:
@@ -42,6 +44,14 @@ class AtomNode(ASTNode):
     @value.setter
     def value(self, val: Union[str, int, float, bool]) -> None:
         self._value = val
+
+    @property
+    def subtype(self) -> Optional[str]:
+        return self._subtype
+
+    @subtype.setter
+    def subtype(self, val: Optional[str]) -> None:
+        self._subtype = val
 
     def __repr__(self) -> str:
         return f"AtomNode({self._value!r})"
@@ -317,7 +327,7 @@ class Parser:
                     pass
             return AtomNode(value, token.line, token.column)
         elif token.type == TokenType.STRING:
-            return AtomNode(token.value, token.line, token.column)
+            return AtomNode(token.value, token.line, token.column, subtype="string")
         else:
             # Symbol
-            return AtomNode(token.value, token.line, token.column)
+            return AtomNode(token.value, token.line, token.column, subtype="symbol")
