@@ -85,14 +85,19 @@ class TypeError(EvaluatorError):
 _builtins: Dict[str, Any] = {}
 
 
-def add_builtin(name: str, func: CallableType) -> None:
-    """Add a built-in function to the global environment.
+def add_builtin(name: str, func: Any) -> None:
+    """Add a built-in function or value to the global environment.
     
     Args:
-        name: Name of the built-in function in Lisp.
-        func: Python function to call.
+        name: Name of the built-in in Lisp.
+        func: Python function to call, or a value (like None for nil).
     """
-    _builtins[name] = BuiltinFunction(func, name)
+    # If it's callable (and not None), wrap it in BuiltinFunction
+    if callable(func):
+        _builtins[name] = BuiltinFunction(func, name)
+    else:
+        # For non-callable values (like nil), store directly
+        _builtins[name] = func
 
 
 def get_builtins() -> Dict[str, Any]:
@@ -160,9 +165,9 @@ def _init_builtins() -> None:
 
     # Add builtins to the current global environment
     env = get_global_environment()
-    for name, func in _builtins.items():
+    for name, value in _builtins.items():
         try:
-            env.define(name, func)
+            env.define(name, value)
         except ValueError:
             # Already defined, skip (e.g., if called multiple times)
             pass
@@ -298,7 +303,9 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         
         test_result = _eval(args[0], env)
         
-        if test_result:
+        # Only False and None/nil are falsy; 0 is truthy (like in Scheme/Racket)
+        # nil is represented as None in Python
+        if test_result is not False and test_result is not None:
             return _eval(args[1], env)
         elif len(args) == 3:
             return _eval(args[2], env)
