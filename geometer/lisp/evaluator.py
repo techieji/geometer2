@@ -298,9 +298,7 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         
         test_result = _eval(args[0], env)
         
-        # Only False and None/nil are falsy; 0 is truthy (like in Scheme/Racket)
-        # nil is represented as None in Python
-        if test_result is not False and test_result is not None:
+        if test_result:
             return _eval(args[1], env)
         elif len(args) == 3:
             return _eval(args[2], env)
