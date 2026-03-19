@@ -13,6 +13,9 @@ from geometer.types.point import DefinitePoint, Point
 # Type alias for callable objects (built-in functions)
 CallableType = Callable[..., Any]
 
+# Set of known special forms
+_SPECIAL_FORMS = {'quote', 'if', 'define', 'lambda', 'let', 'set!', 'begin', 'cond'}
+
 
 class Function:
     """Represents a user-defined Lisp function (lambda)."""
@@ -210,12 +213,12 @@ def _eval_list(node: ListNode, env: Environment) -> Any:
     # Get the first element without evaluating it yet
     first = node.elements[0]
     
-    # Check if it's a special form (a symbol like 'define', 'if', 'lambda', etc.)
+    # Check if it's a known special form
     # Special forms should not have their operator evaluated
     if isinstance(first, AtomNode) and isinstance(first.value, str):
-        # Handle special forms without evaluating the operator
-        args = node.elements[1:]
-        return _eval_special_form(first.value, args, env)
+        if first.value in _SPECIAL_FORMS:
+            args = node.elements[1:]
+            return _eval_special_form(first.value, args, env)
     
     # For regular function calls, evaluate the operator
     operator = _eval(first, env)
@@ -415,7 +418,7 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         return None
     
     else:
-        # Not a special form - treat as function call
+        # Not a special form - should not reach here if _eval_list is correct
         raise TypeError(f"unknown special form: {name}")
 
 
