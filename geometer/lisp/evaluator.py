@@ -154,6 +154,9 @@ def _init_builtins() -> None:
     add_builtin('point+', lambda p1, p2: DefinitePoint(p1.x + p2.x, p1.y + p2.y))
     add_builtin('point-', lambda p1, p2: DefinitePoint(p1.x - p2.x, p1.y - p2.y))
     add_builtin('point*', lambda s, p: DefinitePoint(s * p.x, s * p.y))
+    
+    # Special values - nil is the empty list/false value in Scheme
+    add_builtin('nil', None)
 
     # Add builtins to the current global environment
     env = get_global_environment()
