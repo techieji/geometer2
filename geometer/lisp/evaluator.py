@@ -207,15 +207,21 @@ def _eval_list(node: ListNode, env: Environment) -> Any:
     if not node.elements:
         return []
     
-    # Get the operator (first element)
-    operator = _eval(node.elements[0], env)
+    # Get the first element without evaluating it yet
+    first = node.elements[0]
+    
+    # Check if it's a special form (a symbol like 'define', 'if', 'lambda', etc.)
+    # Special forms should not have their operator evaluated
+    if isinstance(first, AtomNode) and isinstance(first.value, str):
+        # Handle special forms without evaluating the operator
+        args = node.elements[1:]
+        return _eval_special_form(first.value, args, env)
+    
+    # For regular function calls, evaluate the operator
+    operator = _eval(first, env)
     
     # Evaluate the rest as arguments
     args = node.elements[1:]
-    
-    # Check for special forms
-    if isinstance(operator, AtomNode) and isinstance(operator.value, str):
-        return _eval_special_form(operator.value, args, env)
     
     # Function application
     return _apply(operator, args, env)
