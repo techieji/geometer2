@@ -46,10 +46,10 @@ UNTESTED
 - [x] Handle strings, numbers, symbols, parentheses
 
 ### 2.2 Parser
-- [ ] Create `geometer/lisp/parser.py`
-- [ ] Implement S-expression parsing
-- [ ] Build AST nodes for: atoms, lists, quoted expressions
-- [ ] Handle point literal parsing
+- [x] Create `geometer/lisp/parser.py`
+- [x] Implement S-expression parsing
+- [x] Build AST nodes for: atoms, lists, quoted expressions
+- [x] Handle point literal parsing
 
 ### 2.3 Evaluator - Core
 - [ ] Create `geometer/lisp/environment.py` for variable bindings

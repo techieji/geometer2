@@ -169,6 +169,23 @@ class TestLexerSymbols:
         assert tokens[0].value == "<="
         assert tokens[1].type == TokenType.EOF
 
+    def test_symbol_with_exclamation(self):
+        lexer = Lexer("set!")
+        tokens = list(lexer.tokenize())
+        assert len(tokens) == 2
+        assert tokens[0].type == TokenType.SYMBOL
+        assert tokens[0].value == "set!"
+        assert tokens[1].type == TokenType.EOF
+
+    def test_symbol_with_question(self):
+        lexer = Lexer("is-bool?")
+        tokens = list(lexer.tokenize())
+        assert len(tokens) == 2
+        assert tokens[0].type == TokenType.SYMBOL
+        assert tokens[0].value == "is-bool?"
+        assert tokens[1].type == TokenType.EOF
+
+
 
 class TestLexerPointSyntax:
     """Test point syntax tokenization: '(<x>,<y>)'"""

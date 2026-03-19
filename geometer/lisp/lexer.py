@@ -103,7 +103,7 @@ class Lexer:
                 tokens.append(self._read_number())
             
             # Symbol
-            elif char.isalpha() or char in '+-*/<>=_':
+            elif char.isalpha() or char in '?!+-*/<>=_':
                 tokens.append(self._read_symbol())
             
             else:
@@ -390,7 +390,7 @@ class Lexer:
         result = []
         while self.pos < len(self.source):
             char = self.source[self.pos]
-            if char.isalnum() or char in '+-*/<>=_':
+            if char.isalnum() or char in '?!+-*/<>=_':
                 result.append(char)
                 self.pos += 1
             else:
