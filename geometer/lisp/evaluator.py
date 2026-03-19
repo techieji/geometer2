@@ -102,11 +102,19 @@ def get_builtins() -> Dict[str, Any]:
 
 def _init_builtins() -> None:
     """Initialize built-in functions."""
-    # Arithmetic
-    add_builtin('+', lambda a, b: a + b)
-    add_builtin('-', lambda a, b: a - b)
-    add_builtin('*', lambda a, b: a * b)
-    add_builtin('/', lambda a, b: a / b)
+    # Arithmetic (variadic)
+    add_builtin('+', lambda *args: sum(args))
+    add_builtin('-', lambda *args: args[0] - sum(args[1:]) if len(args) > 1 else -args[0])
+    add_builtin('*', lambda *args: eval('*'.join(str(a) for a in args), {'__builtins__': {}}, {}))
+    
+    def div(*args):
+        if len(args) == 1:
+            return 1 / args[0]
+        result = args[0]
+        for a in args[1:]:
+            result = result / a
+        return result
+    add_builtin('/', div)
     
     # Comparison
     add_builtin('=', lambda a, b: a == b)
@@ -146,6 +154,9 @@ def _init_builtins() -> None:
     add_builtin('point+', lambda p1, p2: DefinitePoint(p1.x + p2.x, p1.y + p2.y))
     add_builtin('point-', lambda p1, p2: DefinitePoint(p1.x - p2.x, p1.y - p2.y))
     add_builtin('point*', lambda s, p: DefinitePoint(s * p.x, s * p.y))
+    
+    # Special values
+    add_builtin('nil', None)
 
     # Add builtins to the current global environment
     env = get_global_environment()
@@ -178,7 +189,17 @@ def _convert_list_node(node: ListNode) -> List[Any]:
     Returns:
         A Python list with evaluated elements.
     """
-    return [elem.value for elem in node.elements]
+    result = []
+    for elem in node.elements:
+        if isinstance(elem, ListNode):
+            result.append(_convert_list_node(elem))
+        elif isinstance(elem, PointNode):
+            result.append(_convert_point_node(elem))
+        elif isinstance(elem, AtomNode):
+            result.append(elem.value)
+        else:
+            result.append(elem)
+    return result
 
 
 def _eval_atom(node: AtomNode, env: Environment) -> Any:
@@ -227,6 +248,7 @@ def _eval_list(node: ListNode, env: Environment) -> Any:
     
     # Check if it's a known special form
     # Special forms should not have their operator evaluated
+    # Check this BEFORE evaluating the first element to avoid NameError for undefined symbols
     if isinstance(first, AtomNode) and isinstance(first.value, str):
         if first.value in _SPECIAL_FORMS:
             args = node.elements[1:]
@@ -261,12 +283,12 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         if len(args) != 1:
             raise SyntaxError("quote requires exactly one argument")
         
-        # Convert ListNode to Python list for proper handling
+        # Return the quoted node directly, not evaluated
         quoted = args[0]
         if isinstance(quoted, ListNode):
             return _convert_list_node(quoted)
         elif isinstance(quoted, AtomNode):
-            return quoted.value
+            return quoted
         return quoted
     
     elif name == 'if':
@@ -276,8 +298,8 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         
         test_result = _eval(args[0], env)
         
-        # False or nil is falsy, everything else is truthy
-        if test_result:
+        # Only False and None are falsy; 0 is truthy (like in Scheme/Racket)
+        if test_result is not False and test_result is not None:
             return _eval(args[1], env)
         elif len(args) == 3:
             return _eval(args[2], env)
