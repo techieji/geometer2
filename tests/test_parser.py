@@ -403,3 +403,110 @@ class TestParserASTNode:
         """Test ASTNode string representation."""
         node = AtomNode("hello")
         assert "hello" in repr(node)
+
+
+class TestParserAtomSubtype:
+    """Test AtomNode subtype field for distinguishing string literals from symbols."""
+
+    def test_string_literal_has_string_subtype(self):
+        """String literals should have subtype='string'."""
+        parser = Parser('"hello"')
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].subtype == "string"
+
+    def test_symbol_has_symbol_subtype(self):
+        """Symbols should have subtype='symbol'."""
+        parser = Parser("hello")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].subtype == "symbol"
+
+    def test_number_has_none_subtype(self):
+        """Numbers should have subtype=None (backwards compatible)."""
+        parser = Parser("42")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].subtype is None
+
+    def test_float_has_none_subtype(self):
+        """Floats should have subtype=None (backwards compatible)."""
+        parser = Parser("3.14")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].subtype is None
+
+    def test_negative_number_has_none_subtype(self):
+        """Negative numbers should have subtype=None."""
+        parser = Parser("-10")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].subtype is None
+
+    def test_boolean_has_none_subtype(self):
+        """Booleans should have subtype=None (backwards compatible)."""
+        parser = Parser("#t")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].value is True
+        assert ast[0].subtype is None
+
+    def test_string_in_list_has_string_subtype(self):
+        """Strings inside lists should have subtype='string'."""
+        parser = Parser('(foo "bar")')
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], ListNode)
+        assert ast[0].elements[0].subtype == "symbol"
+        assert ast[0].elements[1].subtype == "string"
+        assert ast[0].elements[1].value == "bar"
+
+    def test_symbol_in_list_has_symbol_subtype(self):
+        """Symbols inside lists should have subtype='symbol'."""
+        parser = Parser("(foo bar)")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], ListNode)
+        assert ast[0].elements[0].subtype == "symbol"
+        assert ast[0].elements[1].subtype == "symbol"
+
+    def test_quoted_symbol_has_symbol_subtype(self):
+        """Quoted symbols should have subtype='symbol'."""
+        parser = Parser("'hello")
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], ListNode)
+        # The quoted symbol is the second element
+        assert ast[0].elements[1].subtype == "symbol"
+
+    def test_empty_string_has_string_subtype(self):
+        """Empty string literals should have subtype='string'."""
+        parser = Parser('""')
+        ast = parser.parse()
+        assert len(ast) == 1
+        assert isinstance(ast[0], AtomNode)
+        assert ast[0].subtype == "string"
+        assert ast[0].value == ""
+
+    def test_atom_node_subtype_setter(self):
+        """AtomNode subtype property should be settable."""
+        node = AtomNode("test")
+        assert node.subtype is None
+        node.subtype = "symbol"
+        assert node.subtype == "symbol"
+
+    def test_atom_node_subtype_backwards_compatible_creation(self):
+        """AtomNode should work without subtype argument (backwards compatible)."""
+        # Creating AtomNode without subtype should work
+        node = AtomNode("value", 1, 1)
+        assert node.subtype is None
+        
+        # Creating AtomNode with subtype should also work
+        node_with_subtype = AtomNode("value", 1, 1, subtype="string")
+        assert node_with_subtype.subtype == "string"
