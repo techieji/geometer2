@@ -154,9 +154,6 @@ def _init_builtins() -> None:
     add_builtin('point+', lambda p1, p2: DefinitePoint(p1.x + p2.x, p1.y + p2.y))
     add_builtin('point-', lambda p1, p2: DefinitePoint(p1.x - p2.x, p1.y - p2.y))
     add_builtin('point*', lambda s, p: DefinitePoint(s * p.x, s * p.y))
-    
-    # Special values
-    add_builtin('nil', None)
 
     # Add builtins to the current global environment
     env = get_global_environment()
@@ -298,7 +295,8 @@ def _eval_special_form(name: str, args: List[ASTNode], env: Environment) -> Any:
         
         test_result = _eval(args[0], env)
         
-        # Only False and None are falsy; 0 is truthy (like in Scheme/Racket)
+        # Only False and None/nil are falsy; 0 is truthy (like in Scheme/Racket)
+        # nil is represented as None in Python
         if test_result is not False and test_result is not None:
             return _eval(args[1], env)
         elif len(args) == 3:
