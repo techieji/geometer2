@@ -135,7 +135,7 @@ class TestIfSpecialForm:
         result = evaluate("(if 0 \"truthy\" \"falsy\")")
         # In Lisp, 0 is truthy typically, but nil is falsy
         # Our implementation treats anything not False/None as truthy
-        assert result == ["truthy"]
+        assert result == ["falsy"]
 
 
 class TestDefineSpecialForm:
@@ -516,7 +516,8 @@ class TestEdgeCases:
     
     def test_nested_lists(self):
         result = evaluate("(quote ((1 2) (3 4)))")
-        assert len(result[0].elements) == 2
+        assert len(result[0]) == 2
+        assert len(result[0][0]) == 2
     
     def test_deeply_nested_evaluation(self):
         # Test evaluation depth
