@@ -1,24 +1,30 @@
 from language import Token, TokenType, ParseTree
-from typing import Iterable, Iterator
+from typing import Iterable, List
 
 def parse(tokens: Iterable[Token]) -> ParseTree:
-    token_iter = iter(tokens)
+    token_list = list(tokens)
+    pos = 0
+    n = len(token_list)
 
-    def parse_one():
-        token = next(token_iter)
+    def parse_one() -> ParseTree:
+        nonlocal pos
+        if pos >= n:
+            raise ValueError("Unexpected end of input")
+
+        token = token_list[pos]
+        pos += 1
 
         if token.kind == TokenType.CHARACTER:
             if token.value == '(':
                 items = []
-                while True:
-                    next_token = next(token_iter, None)
-                    if next_token is None:
-                        raise ValueError("Unclosed parenthesis")
+                while pos < n:
+                    next_token = token_list[pos]
                     if next_token.kind == TokenType.CHARACTER and next_token.value == ')':
+                        pos += 1
                         break
-                    token_iter = iter([next_token] + list(token_iter))
-                    item = parse_one()
-                    items.append(item)
+                    items.append(parse_one())
+                else:
+                    raise ValueError("Unclosed parenthesis")
                 return ParseTree(is_literal=False, value=items)
             elif token.value == "'":
                 quoted = parse_one()
