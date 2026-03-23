@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any, Iterable
+from dataclasses import dataclass
 
 class TokenType(Enum):
     NUMBER = 0
@@ -9,13 +10,15 @@ class TokenType(Enum):
     POINT = 4
     CHARACTER = 5        # represents parentheses, quotes, unquote, quasiquotes, etc.
 
+@dataclass
 class Token:
     kind: TokenType
     value: Any
 
+@dataclass
 class ParseTree:
     is_literal: bool
-    value: Token | list[ParseTree]
+    value: Token | list['ParseTree']
     # value is of type Token if is_literal is true; otherwise, it is a list of ParseTrees.
 
 type Environment = ChainMap
