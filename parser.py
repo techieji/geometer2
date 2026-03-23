@@ -60,3 +60,11 @@ def parse(tokens: Iterable[Token]) -> ParseTree:
         return parse_one()
     except StopIteration:
         return ParseTree(is_literal=False, value=[])
+
+if __name__ == '__main__':
+    from lexer import lex
+    try:
+        while True:
+            print(parse(lex(input())))
+    except EOFError:
+        print('Exiting')

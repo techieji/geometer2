@@ -20,6 +20,7 @@ class ParseTree:
     is_literal: bool
     value: Token | list['ParseTree']
     # value is of type Token if is_literal is true; otherwise, it is a list of ParseTrees.
+    def display(self): ...       # pretty-prints the tree using box-drawing characters
 
 type Environment = ChainMap
 
