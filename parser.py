@@ -65,6 +65,6 @@ if __name__ == '__main__':
     from lexer import lex
     try:
         while True:
-            print(parse(lex(input())))
+            parse(lex(input())).display()
     except EOFError:
         print('Exiting')
