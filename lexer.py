@@ -27,7 +27,12 @@ def lex(program):
             j = i + 2
             while j < n and program[j] != ')':
                 j += 1
-            yield Token(TokenType.POINT, program[i+1:j+1])
+            if ',' in program[i+1:j]:
+                yield Token(TokenType.POINT, program[i+1:j+1])
+            else:
+                yield Token(TokenType.CHARACTER, "'")
+                i += 1
+                continue
             i = j + 1
         elif c == '#':
             if i + 1 < n and program[i+1] in 'tf':
