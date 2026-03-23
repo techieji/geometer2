@@ -6,7 +6,8 @@ class TokenType(Enum):
     STRING = 1
     ATOM = 2
     BOOLEAN = 3
-    CHARACTER = 4        # represents parentheses, quotes, unquote, quasiquotes, etc.
+    POINT = 4
+    CHARACTER = 5        # represents parentheses, quotes, unquote, quasiquotes, etc.
 
 class Token:
     kind: TokenType
