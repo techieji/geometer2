@@ -1,10 +1,10 @@
 from typing import Any
 from language import ParseTree, Token, Environment, TokenType
-from execute.registry import _globals, _special_forms, _apply_func
+from execute.registry import _globals, _special_forms
 from execute.utils import _is_truthy, _eval_list
+from execute import EvalResult, _ApplyFunc
 
 def _eval(node: ParseTree, env: Environment) -> EvalResult:
-    from execute import EvalResult
     if node.is_literal:
         if node.value.kind == TokenType.ATOM:
             name = node.value.value
@@ -28,7 +28,6 @@ def _eval(node: ParseTree, env: Environment) -> EvalResult:
     raise ValueError(f"Unknown form: {name}")
 
 def _apply(func: _ApplyFunc, args: list[ParseTree], env: Environment) -> EvalResult:
-    from execute import EvalResult
     evaled = _eval_list(args, env)
     if callable(func):
         return func(evaled, env)
