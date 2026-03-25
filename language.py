@@ -46,9 +46,3 @@ class ParseTree:
         _show(self)                                                                   
 
 type Environment = ChainMap
-
-def make_global_environment() -> Environment: ...
-
-def lex(program: str) -> Iterable[Token]: ...
-def parse(tokens: Iterable[Token]) -> ParseTree: ...
-def execute(parse_tree: ParseTree, environment: Environment) -> Token: ...      # Returns a literal

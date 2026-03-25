@@ -1,6 +1,6 @@
 from collections import ChainMap
 from typing import Any, Callable, Protocol
-from language import ParseTree, Token, Environment, TokenType, make_global_environment
+from language import ParseTree, Token, Environment, TokenType
 
 type EvalResult = Token | list['EvalResult']
 
@@ -12,6 +12,11 @@ _special_forms: dict[str, Callable[[list[ParseTree], Environment], EvalResult]] 
 
 def _eval(node: ParseTree, env: Environment) -> EvalResult:
     if node.is_literal:
+        if node.value.kind == TokenType.ATOM:
+            name = node.value.value
+            if name in env:
+                return env[name]
+            raise NameError(f"undefined: {name}")
         return node.value
     elements = node.value if isinstance(node.value, list) else [node.value]
     if not elements:
@@ -275,3 +280,13 @@ _install_builtins()
 
 def execute(parse_tree: ParseTree, environment: Environment) -> Token:
     return _eval(parse_tree, environment)
+
+if __name__ == '__main__':
+    from lexer import lex
+    from parser import parse
+    env = ChainMap({})
+    try:
+        while True:
+            print(execute(parse(lex(input())), env))
+    except EOFError:
+        print('Exiting')
