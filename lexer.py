@@ -1,7 +1,8 @@
 import re
 from language import TokenType, Token, ParseTree
+from typing import Iterable
 
-def lex(program):
+def lex(program: str) -> Iterable[Token]:
     program = program.strip()
     i = 0
     n = len(program)

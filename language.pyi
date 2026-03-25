@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Iterable
 from dataclasses import dataclass
+from collections import ChainMap
 
 class TokenType(Enum):
     NUMBER = 0
@@ -20,7 +21,7 @@ class ParseTree:
     is_literal: bool
     value: Token | list['ParseTree']
     # value is of type Token if is_literal is true; otherwise, it is a list of ParseTrees.
-    def display(self): ...       # pretty-prints the tree using box-drawing characters
+    def display(self) -> None: ...       # pretty-prints the tree using box-drawing characters
 
 type Environment = ChainMap
 
