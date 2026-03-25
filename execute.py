@@ -275,6 +275,25 @@ def _install_builtins():
         return Token(TokenType.ATOM, 'ok')
     _bind_builtin('newline', newline)
 
+def pprint_result(result: EvalResult) -> None:
+    def fmt(x):
+        if isinstance(x, Token):
+            if x.kind == TokenType.NUMBER:
+                return str(x.value)
+            if x.kind == TokenType.STRING:
+                return f'"{x.value}"'
+            if x.kind == TokenType.BOOLEAN:
+                return '#t' if x.value else '#f'
+            if x.kind == TokenType.ATOM:
+                return str(x.value)
+            if x.kind == TokenType.POINT:
+                return str(x.value)
+            return str(x.value)
+        if isinstance(x, list):
+            return '(' + ' '.join(fmt(e) for e in x) + ')'
+        return str(x)
+    print(fmt(result))
+
 _install_special_forms()
 _install_builtins()
 
@@ -287,6 +306,6 @@ if __name__ == '__main__':
     env = ChainMap({})
     try:
         while True:
-            print(execute(parse(lex(input())), env))
+            pprint_result(execute(parse(lex(input())), env))
     except EOFError:
         print('Exiting')
