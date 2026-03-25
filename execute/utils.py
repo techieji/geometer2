@@ -1,4 +1,4 @@
-from language import Token, TokenType, Environment
+from language import Token, TokenType, Environment, ParseTree
 from execute import EvalResult
 
 def _is_truthy(val: EvalResult) -> bool:
