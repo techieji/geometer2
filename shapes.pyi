@@ -1,10 +1,9 @@
-from typing import Callable
 from enum import Enum
+from typing import Callable
 
 class Point:
     x: float
     y: float
-
     def __add__(self, other: Point) -> Point: ...
     def __sub__(self, other: Point) -> Point: ...
     def __mul__(self, other: float) -> Point: ...
@@ -17,7 +16,6 @@ class Shape:
     color: str
     thickness: float
     endcaps: str
-
     def midpoint(self) -> ConstrainedPoint: ...
 
 class Line(Shape):
@@ -25,14 +23,12 @@ class Line(Shape):
     end: Point
 
 class Bezier(Shape):
-    # Cubic bezier curve
     start: Point
     control1: Point
     control2: Point
     end: Point
 
 class Dot(Shape):
-    # A shape to be rendered
     place: Point
 
 class Text(Shape):
@@ -46,7 +42,6 @@ class RotationDirection(Enum):
 class Arc(Shape):
     center: Point
     radius: float
-    start_angle: float    # radians
+    start_angle: float
     end_angle: float
     direction: RotationDirection
-

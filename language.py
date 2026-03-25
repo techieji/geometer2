@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Iterable
 from dataclasses import dataclass
+from collections import ChainMap
 
 class TokenType(Enum):
     NUMBER = 0
