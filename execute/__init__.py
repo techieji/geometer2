@@ -1,6 +1,6 @@
 from collections import ChainMap
 from typing import Any, Callable, Protocol
-from language import ParseTree, Token, Environment, TokenType, make_global_environment
+from language import ParseTree, Token, Environment, TokenType
 
 type EvalResult = Token | list['EvalResult']
 
