@@ -1,5 +1,5 @@
 from typing import Callable
-from language import Environment, ParseTree, Token, TokenType
+from language import Environment, ParseTree, Token
 from execute import execute
 
 type EvalResult = list[EvalResult] | int | float | bool | str | Callable[[list[EvalResult]], EvalResult]

@@ -1,12 +1,12 @@
 from typing import Callable
 from language import Environment, ParseTree, Token, TokenType
-from builtins import get_builtin
-from special_forms import get_special_form
+from builtin_fns import get_builtin
 from pprint import pprint_result
 
 type EvalResult = list[EvalResult] | int | float | bool | str | Callable[[list[EvalResult]], 'EvalResult']
 
 def execute(parse_tree: ParseTree, environment: Environment) -> EvalResult:
+    from special_forms import get_special_form
     if parse_tree.is_literal:
         return parse_tree.value
     
@@ -24,3 +24,13 @@ def execute(parse_tree: ParseTree, environment: Environment) -> EvalResult:
             return builtin(args, environment)
     
     raise ValueError(f"Cannot evaluate {parse_tree}")
+
+if __name__ == '__main__':
+    from lexer import lex
+    from parser import parse
+    from environment import make_environment
+    try:
+        while True:
+            pprint_result(execute(parse(lex(input('> '))), make_environment()))
+    except EOFError:
+        print('exiting')

@@ -1,4 +1,4 @@
-from language import Environment as Environment, ParseTree, Token
+from language import Environment as Environment, ParseTree
 from typing import Callable
 
 type EvalResult = list['EvalResult'] | int | float | bool | str | Callable[list['EvalResult'], 'EvalResult']

@@ -1,7 +1,7 @@
-from typing import Callable, Any
+from typing import Callable
 from language import Environment, Token, TokenType
 
-type EvalResult = list[EvalResult] | int | float | bool | str | Callable[[list[EvalResult]], EvalResult]
+type EvalResult = list[EvalResult] | int | float | bool | str | tuple[float, float] | Callable[[list[EvalResult]], EvalResult]
 
 def _is_token(val: EvalResult) -> bool:
     return isinstance(val, Token)
@@ -34,7 +34,7 @@ def _sub(args: list[EvalResult], env: Environment) -> EvalResult:
         return (p1[0] - p2[0], p1[1] - p2[1])
     a = _to_number(args[0])
     b = _to_number(args[1])
-    return a - b  # type: ignore
+    return a - b
 
 def _mul(args: list[EvalResult], env: Environment) -> EvalResult:
     if len(args) > 1 and _is_token(args[1]) and args[1].kind == TokenType.POINT:  # type: ignore
@@ -43,12 +43,12 @@ def _mul(args: list[EvalResult], env: Environment) -> EvalResult:
         return (s * p[0], s * p[1])
     a = _to_number(args[0])
     b = _to_number(args[1])
-    return a * b  # type: ignore
+    return a * b
 
 def _div(args: list[EvalResult], env: Environment) -> EvalResult:
     a = _to_number(args[0])
     b = _to_number(args[1])
-    return a / b  # type: ignore
+    return a / b
 
 def _eq(args: list[EvalResult], env: Environment) -> EvalResult:
     return args[0] == args[1]
@@ -56,23 +56,26 @@ def _eq(args: list[EvalResult], env: Environment) -> EvalResult:
 def _lt(args: list[EvalResult], env: Environment) -> EvalResult:
     a = _to_number(args[0])
     b = _to_number(args[1])
-    return a < b  # type: ignore
+    return a < b
 
 def _gt(args: list[EvalResult], env: Environment) -> EvalResult:
     a = _to_number(args[0])
     b = _to_number(args[1])
-    return a > b  # type: ignore
+    return a > b
 
 def _car(args: list[EvalResult], env: Environment) -> EvalResult:
     lst = args[0]
-    if isinstance(lst, list):
+    if isinstance(lst, list) and type(lst[0]) is EvalResult:
         return lst[0]
-    return None
+    raise ValueError('no arguments')
 
 def _cdr(args: list[EvalResult], env: Environment) -> EvalResult:
     lst = args[0]
     if isinstance(lst, list):
-        return lst[1:]
+        if not lst:
+            return lst
+        if type(lst[0]) is EvalResult:
+            return lst[1:]
     return []
 
 def _cons(args: list[EvalResult], env: Environment) -> EvalResult:
