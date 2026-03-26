@@ -1,2 +1,5 @@
 [tool.ty.src]
 exclude = ["tests"]
+
+[tool.ruff]
+exclude = ["tests"]

@@ -1,7 +1,7 @@
 import pytest
 from lexer import lex
 from parser import parse
-from execute import execute
+#from execute import execute
 from collections import ChainMap
 
 

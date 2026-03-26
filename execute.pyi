@@ -1,9 +1,7 @@
 from language import Environment as Environment, ParseTree, Token
-from typing import Protocol
+from typing import Callable
 
-type EvalResult = Token | list['EvalResult']
-class _ApplyFunc(Protocol):
-    def __call__(self, args: list[ParseTree], env: Environment) -> EvalResult: ...
+type EvalResult = list['EvalResult'] | int | float | bool | str | Callable[list['EvalResult'], 'EvalResult']
 
 def pprint_result(result: EvalResult) -> None: ...
 def execute(parse_tree: ParseTree, environment: Environment) -> Token: ...

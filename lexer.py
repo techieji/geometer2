@@ -1,7 +1,8 @@
 from language import TokenType, Token
 from typing import Iterable
 
-Point = lambda x,y: (x,y)    # TODO temporary
+def Point(x, y):
+    return (x, y)
 
 def lex(program: str) -> Iterable[Token]:
     program = program.strip()
