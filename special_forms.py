@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Any
 from language import Environment, ParseTree, Token
 from execute import execute
 
@@ -10,7 +10,7 @@ def _quote(expr: list[ParseTree], env: Environment) -> EvalResult:
     val = expr[1].value
     if isinstance(val, Token):
         return val
-    return val
+    return val  # type: ignore
 
 def _if(expr: list[ParseTree], env: Environment) -> EvalResult:
     cond = execute(expr[1], env)
@@ -18,31 +18,35 @@ def _if(expr: list[ParseTree], env: Environment) -> EvalResult:
         return execute(expr[2], env)
     if len(expr) > 3:
         return execute(expr[3], env)
-    return None
+    return False
 
 def _define(expr: list[ParseTree], env: Environment) -> EvalResult:
     name = expr[1].value
     if isinstance(name, Token):
         name = name.value
     value = execute(expr[2], env)
-    env[name] = value
-    return None
+    env[name] = value  # type: ignore
+    return False
 
 def _set(expr: list[ParseTree], env: Environment) -> EvalResult:
     name = expr[1].value
     if isinstance(name, Token):
         name = name.value
     value = execute(expr[2], env)
-    env[name] = value
-    return None
+    env[name] = value  # type: ignore
+    return False
 
 def _lambda(expr: list[ParseTree], env: Environment) -> EvalResult:
-    params = [p.value for p in expr[1].value] if isinstance(expr[1].value, list) else []
+    params: list[Any] = []
+    if isinstance(expr[1].value, list):
+        for p in expr[1].value:
+            if isinstance(p, Token):
+                params.append(p.value)
     body = expr[2]
-    return (params, body, env)
+    return (params, body, env)  # type: ignore
 
 def _begin(expr: list[ParseTree], env: Environment) -> EvalResult:
-    result: EvalResult = None
+    result: EvalResult = False
     for e in expr[1:]:
         result = execute(e, env)
     return result
