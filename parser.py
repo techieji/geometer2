@@ -1,5 +1,5 @@
 from language import Token, TokenType, ParseTree
-from typing import Iterable, List
+from typing import Iterable
 
 def parse(tokens: Iterable[Token]) -> ParseTree:
     token_list = list(tokens)

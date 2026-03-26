@@ -1,6 +1,7 @@
-import re
-from language import TokenType, Token, ParseTree
+from language import TokenType, Token
 from typing import Iterable
+
+Point = lambda x,y: (x,y)    # TODO temporary
 
 def lex(program: str) -> Iterable[Token]:
     program = program.strip()
@@ -29,7 +30,7 @@ def lex(program: str) -> Iterable[Token]:
             while j < n and program[j] != ')':
                 j += 1
             if ',' in program[i+1:j]:
-                yield Token(TokenType.POINT, program[i+1:j+1])
+                yield Token(TokenType.POINT, Point(*map(int, program[i+2:j].split(','))))
             else:
                 yield Token(TokenType.CHARACTER, "'")
                 i += 1

@@ -2,7 +2,7 @@ from collections import ChainMap
 from typing import Any, Callable, Protocol, cast
 from language import ParseTree, Token, Environment, TokenType
 
-type EvalResult = Token | list['EvalResult']
+type EvalResult = Token | Callable[list['EvalResult'], 'EvalResult'] | list['EvalResult']
 
 class _ApplyFunc(Protocol):
     def __call__(self, args: list[EvalResult], env: Environment) -> EvalResult: ...
@@ -11,7 +11,6 @@ _globals: dict[str, Any] = {}
 _special_forms: dict[str, Callable[[list[ParseTree], Environment], EvalResult]] = {}
 
 def _eval(node: ParseTree, env: Environment) -> EvalResult:
-    node.display()
     if node.is_literal:
         if node.value.kind == TokenType.ATOM:
             name = node.value.value
@@ -75,7 +74,7 @@ def _make_native_closure(params: list[str], body: list[ParseTree], env: Environm
 
 def _install_special_forms():
     def quote_handler(args: list[ParseTree], env: Environment) -> EvalResult:
-        return args[0].value if len(args) == 1 else [a.value for a in args]
+        return to_python(args[0]) if len(args) == 1 else [to_python(a) for a in args]
     _bind_special_form('quote', quote_handler)
     _bind_special_form("'", lambda args, env: args[0].value if args else [])
 
@@ -94,7 +93,7 @@ def _install_special_forms():
     _bind_special_form('define', define_handler)
 
     def lambda_handler(args: list[ParseTree], env: Environment) -> EvalResult:
-        params = [p.value for p in args[0].value] if args[0].is_literal and args[0].value.kind == TokenType.CHARACTER else [p.value.value for p in args[0].value]
+        params = [cast(ParseTree, p.value).value for p in cast(list[ParseTree], args[0].value)]
         body = args[1:]
         return _make_closure(params, body, env)
     _bind_special_form('lambda', lambda_handler)
@@ -219,7 +218,7 @@ def _install_builtins():
     _bind_builtin('not', not_op)
 
     def cons(args: list[EvalResult], env: Environment) -> EvalResult:
-        return [args[0]] + cast(list[EvalResult], args[1])
+        return [to_python(args[0])] + cast(list[EvalResult], args[1])
     _bind_builtin('cons', cons)
 
     def car(args: list[EvalResult], env: Environment) -> EvalResult:
@@ -299,23 +298,11 @@ def pprint_result(result: EvalResult) -> None:
         return str(x)
     print(fmt(result))
 
-def to_python(result: EvalResult) -> list | int | float | str | bool | tuple | None:
-    """Convert an EvalResult to a plain Python value (no Tokens or ParseTrees)."""
+def to_python(result: Any) -> list | int | float | str | bool | tuple:
     if isinstance(result, Token):
-        if result.kind == TokenType.NUMBER:
-            return result.value
-        elif result.kind == TokenType.STRING:
-            return result.value
-        elif result.kind == TokenType.BOOLEAN:
-            return result.value
-        elif result.kind == TokenType.ATOM:
-            return result.value
-        elif result.kind == TokenType.POINT:
-            return result.value
-        elif result.kind == TokenType.CHARACTER:
-            return result.value
-        else:
-            return result.value
+        return result.value
+    elif isinstance(result, ParseTree):
+        return to_python(result.value)
     elif isinstance(result, list):
         return [to_python(item) for item in result]
     else:
