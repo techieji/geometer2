@@ -1,16 +1,17 @@
 from collections import ChainMap
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, cast
 from language import ParseTree, Token, Environment, TokenType
 
 type EvalResult = Token | list['EvalResult']
 
 class _ApplyFunc(Protocol):
-    def __call__(self, args: list[ParseTree], env: Environment) -> EvalResult: ...
+    def __call__(self, args: list[EvalResult], env: Environment) -> EvalResult: ...
 
 _globals: dict[str, Any] = {}
 _special_forms: dict[str, Callable[[list[ParseTree], Environment], EvalResult]] = {}
 
 def _eval(node: ParseTree, env: Environment) -> EvalResult:
+    node.display()
     if node.is_literal:
         if node.value.kind == TokenType.ATOM:
             name = node.value.value
@@ -22,7 +23,7 @@ def _eval(node: ParseTree, env: Environment) -> EvalResult:
     if not elements:
         return Token(TokenType.ATOM, '()')
     first = elements[0]
-    if not first.is_literal or first.value.kind != TokenType.ATOM:
+    if not first.is_literal:
         func = _eval(first, env)
         return _apply(func, elements[1:], env)
     name = first.value.value
@@ -31,6 +32,10 @@ def _eval(node: ParseTree, env: Environment) -> EvalResult:
     if name in _globals:
         func = _globals[name]
         return _apply(func, elements[1:], env)
+    if name in env:
+        func = env[name]
+        return _apply(func, elements[1:], env)
+
     raise ValueError(f"Unknown form: {name}")
 
 def _apply(func: _ApplyFunc, args: list[ParseTree], env: Environment) -> EvalResult:
@@ -95,21 +100,21 @@ def _install_special_forms():
     _bind_special_form('lambda', lambda_handler)
 
     def let_handler(args: list[ParseTree], env: Environment) -> EvalResult:
-        bindings = args[0].value if args[0].is_literal else args[0].value
+        bindings = cast(list[ParseTree], args[0].value)
         local = {}
         for b in bindings:
-            var = b.value[0].value.value
-            val = _eval(b.value[1], env)
+            var = cast(Token, cast(list[ParseTree], b.value)[0].value).value
+            val = _eval(cast(list[ParseTree], b.value)[1], env)
             local[var] = val
         new_env = ChainMap(local, env)
-        result = None
+        result = []
         for expr in args[1:]:
             result = _eval(expr, new_env)
         return result
     _bind_special_form('let', let_handler)
 
     def set_handler(args: list[ParseTree], env: Environment) -> EvalResult:
-        name = args[0].value.value
+        name = cast(Token, args[0].value).value
         value = _eval(args[1], env)
         for m in env.maps:
             if name in m:
@@ -119,7 +124,7 @@ def _install_special_forms():
     _bind_special_form('set!', set_handler)
 
     def begin_handler(args: list[ParseTree], env: Environment) -> EvalResult:
-        result = None
+        result = []
         for expr in args:
             result = _eval(expr, env)
         return result
@@ -214,15 +219,15 @@ def _install_builtins():
     _bind_builtin('not', not_op)
 
     def cons(args: list[EvalResult], env: Environment) -> EvalResult:
-        return [args[0]] + args[1]
+        return [args[0]] + cast(list[EvalResult], args[1])
     _bind_builtin('cons', cons)
 
     def car(args: list[EvalResult], env: Environment) -> EvalResult:
-        return args[0][0]
+        return cast(list[EvalResult], args[0])[0]
     _bind_builtin('car', car)
 
     def cdr(args: list[EvalResult], env: Environment) -> EvalResult:
-        return args[0][1:]
+        return cast(list[EvalResult], args[0])[1:]
     _bind_builtin('cdr', cdr)
 
     def list_fn(args: list[EvalResult], env: Environment) -> EvalResult:
@@ -297,7 +302,7 @@ def pprint_result(result: EvalResult) -> None:
 _install_special_forms()
 _install_builtins()
 
-def execute(parse_tree: ParseTree, environment: Environment) -> Token:
+def execute(parse_tree: ParseTree, environment: Environment) -> EvalResult:
     return _eval(parse_tree, environment)
 
 if __name__ == '__main__':
