@@ -299,6 +299,28 @@ def pprint_result(result: EvalResult) -> None:
         return str(x)
     print(fmt(result))
 
+def to_python(result: EvalResult) -> list | int | float | str | bool | tuple | None:
+    """Convert an EvalResult to a plain Python value (no Tokens or ParseTrees)."""
+    if isinstance(result, Token):
+        if result.kind == TokenType.NUMBER:
+            return result.value
+        elif result.kind == TokenType.STRING:
+            return result.value
+        elif result.kind == TokenType.BOOLEAN:
+            return result.value
+        elif result.kind == TokenType.ATOM:
+            return result.value
+        elif result.kind == TokenType.POINT:
+            return result.value
+        elif result.kind == TokenType.CHARACTER:
+            return result.value
+        else:
+            return result.value
+    elif isinstance(result, list):
+        return [to_python(item) for item in result]
+    else:
+        return result
+
 _install_special_forms()
 _install_builtins()
 
