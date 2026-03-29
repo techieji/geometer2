@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 from collections import ChainMap
 
 class TokenType(Enum):
@@ -16,9 +16,13 @@ class Token:
     kind: TokenType
     value: Any
 
+type EvalResult = list[EvalResult] | int | float | bool | str | tuple[float, float] | Callable[[list[EvalResult]], EvalResult]
+
 @dataclass
 class ParseTree:
     is_literal: bool
     value: Token | list['ParseTree']
     def display(self) -> None: ...
+    def to_python(self) -> EvalResult: ...
+
 type Environment = ChainMap

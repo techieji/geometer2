@@ -1,14 +1,12 @@
 from typing import Callable
-from language import Environment, ParseTree, Token, TokenType
+from language import Environment, ParseTree, Token, TokenType, EvalResult
 from builtin_fns import get_builtin
 from pprint import pprint_result
 
-type EvalResult = list[EvalResult] | int | float | bool | str | Callable[[list[EvalResult]], 'EvalResult']
-
 def execute(parse_tree: ParseTree, environment: Environment) -> EvalResult:
     from special_forms import get_special_form
-    if parse_tree.is_literal:
-        return parse_tree.value
+    if isinstance(parse_tree.value, Token):
+        return parse_tree.value.value
     
     expr: list[ParseTree] = parse_tree.value
     first = execute(expr[0], environment)

@@ -1,7 +1,5 @@
 from typing import Callable
-from language import Token, TokenType
-
-type EvalResult = list[EvalResult] | int | float | bool | str | Callable[[list[EvalResult]], EvalResult]
+from language import Token, TokenType, EvalResult
 
 def pprint_result(result: EvalResult) -> None:
     if isinstance(result, list):

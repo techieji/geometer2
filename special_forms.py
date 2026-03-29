@@ -1,16 +1,14 @@
 from typing import Callable, Any
-from language import Environment, ParseTree, Token
+from language import Environment, ParseTree, Token, EvalResult
 from execute import execute
-
-type EvalResult = list[EvalResult] | int | float | bool | str | Callable[[list[EvalResult]], EvalResult]
 
 def _quote(expr: list[ParseTree], env: Environment) -> EvalResult:
     if len(expr) < 2:
         return []
     val = expr[1].value
     if isinstance(val, Token):
-        return val
-    return val  # type: ignore
+        return val.value
+    return val
 
 def _if(expr: list[ParseTree], env: Environment) -> EvalResult:
     cond = execute(expr[1], env)
@@ -25,7 +23,7 @@ def _define(expr: list[ParseTree], env: Environment) -> EvalResult:
     if isinstance(name, Token):
         name = name.value
     value = execute(expr[2], env)
-    env[name] = value  # type: ignore
+    env[name] = value
     return False
 
 def _set(expr: list[ParseTree], env: Environment) -> EvalResult:
@@ -33,7 +31,7 @@ def _set(expr: list[ParseTree], env: Environment) -> EvalResult:
     if isinstance(name, Token):
         name = name.value
     value = execute(expr[2], env)
-    env[name] = value  # type: ignore
+    env[name] = value
     return False
 
 def _lambda(expr: list[ParseTree], env: Environment) -> EvalResult:
@@ -43,7 +41,7 @@ def _lambda(expr: list[ParseTree], env: Environment) -> EvalResult:
             if isinstance(p, Token):
                 params.append(p.value)
     body = expr[2]
-    return (params, body, env)  # type: ignore
+    return [params, body, env]
 
 def _begin(expr: list[ParseTree], env: Environment) -> EvalResult:
     result: EvalResult = False
